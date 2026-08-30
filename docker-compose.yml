@@ -1,0 +1,48 @@
+# Local development stack: app + PostgreSQL.
+# Jalankan:  docker compose up --build
+# Nilai dibaca dari .env (lihat .env.example).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-otakademi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-otakademi}
+      POSTGRES_DB: ${POSTGRES_DB:-otakademi_app}
+    ports:
+      - "5432:5432"
+    volumes:
+      - otakademi_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-otakademi} -d ${POSTGRES_DB:-otakademi_app}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # App terhubung ke service "db" lewat jaringan internal compose.
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-otakademi}:${POSTGRES_PASSWORD:-otakademi}@db:5432/${POSTGRES_DB:-otakademi_app}?schema=public"
+      AUTH_SECRET: ${AUTH_SECRET}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@otakademi.id}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-change-me}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-}
+      # Isi data contoh saat pertama up. Set false setelah data nyata masuk.
+      RUN_SEED: ${RUN_SEED:-true}
+    ports:
+      - "3000:3000"
+    volumes:
+      # Simpan file upload di luar container agar tidak hilang saat rebuild.
+      - otakademi_uploads:/app/public/uploads
+
+volumes:
+  otakademi_pgdata:
+  otakademi_uploads:

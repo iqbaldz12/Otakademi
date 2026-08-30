@@ -43,7 +43,9 @@ function iconFor(name: string): IconName {
  * footer too. Shows at most the first two active channels to stay compact.
  */
 export async function Footer() {
-  const channels = (await listPublicChannels()).slice(0, 2);
+  // Empty when the DB is unreachable (e.g. during a container build); the
+  // footer simply omits the quick-contact buttons rather than failing the page.
+  const channels = (await listPublicChannels().catch(() => [])).slice(0, 2);
 
   return (
     <footer className="no-print mt-auto border-t border-navy-100 bg-surface">

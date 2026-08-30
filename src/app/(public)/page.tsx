@@ -9,7 +9,7 @@ import { listFeaturedEvents } from "@/server/services/event.service";
 import { getDashboardSummary } from "@/server/services/report.service";
 import { getLandingContent } from "@/server/services/content.service";
 import { formatNumber } from "@/lib/format";
-import { isContactIcon } from "@/lib/domain";
+import { isContactIcon, LANDING_DEFAULTS } from "@/lib/domain";
 
 export const metadata: Metadata = {
   title: "Otakademi - Upgrade Skill. Upgrade Cara Mikir.",
@@ -33,11 +33,30 @@ function benefitIcon(name: string | null): IconName {
 }
 
 export default async function HomePage() {
-  // Independent queries run together rather than in sequence.
+  // Independent queries run together. Wrapped so a build without a reachable
+  // database (e.g. `docker build`) still produces the page; real data fills in
+  // once it renders against a live DB.
   const [featured, stats, content] = await Promise.all([
-    listFeaturedEvents(3),
-    getDashboardSummary(),
-    getLandingContent(),
+    listFeaturedEvents(3).catch(() => []),
+    getDashboardSummary().catch(() => ({
+      activeEvents: 0,
+      totalRegistrants: 0,
+      paidCount: 0,
+      revenue: 0,
+      attendedCount: 0,
+      attendanceRate: 0,
+      todayRegistrations: 0,
+      todayPaid: 0,
+      awaitingPayment: 0,
+      waitlistCount: 0,
+    })),
+    getLandingContent().catch(() => ({
+      copy: LANDING_DEFAULTS,
+      benefits: [],
+      steps: [],
+      testimonials: [],
+      faqs: [],
+    })),
   ]);
 
   const { copy, benefits, steps, testimonials, faqs } = content;

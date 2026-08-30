@@ -1,0 +1,10 @@
+# Caddy meng-otomatiskan sertifikat HTTPS (Let's Encrypt) untuk domain ini.
+# Ganti email dengan alamat admin valid untuk notifikasi sertifikat.
+{
+	email admin@otakademi.online
+}
+
+otakademi.online, www.otakademi.online {
+	reverse_proxy app:3000
+	encode gzip zstd
+}

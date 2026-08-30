@@ -4,7 +4,7 @@ import {
   listPublicChannels,
   getContactContent,
 } from "@/server/services/content.service";
-import { isContactIcon } from "@/lib/domain";
+import { isContactIcon, CONTACT_DEFAULTS } from "@/lib/domain";
 
 export const metadata: Metadata = {
   title: "Hubungi Kami",
@@ -28,9 +28,17 @@ function iconFor(name: string): IconName {
 }
 
 export default async function KontakPage() {
+  // Fall back to defaults if the database is unreachable (e.g. during a
+  // container image build); the page then hydrates with real data at runtime.
   const [channels, content] = await Promise.all([
-    listPublicChannels(),
-    getContactContent(),
+    listPublicChannels().catch(() => []),
+    getContactContent().catch(() => ({
+      heroTitle: CONTACT_DEFAULTS.heroTitle,
+      heroSubtitle: CONTACT_DEFAULTS.heroSubtitle,
+      hoursTitle: CONTACT_DEFAULTS.hoursTitle,
+      hoursBody: CONTACT_DEFAULTS.hoursBody,
+      topics: CONTACT_DEFAULTS.topics,
+    })),
   ]);
 
   return (

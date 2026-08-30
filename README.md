@@ -183,7 +183,45 @@ src/
 
 ---
 
-## Deploy ke produksi
+## Menjalankan dengan Docker
+
+Cara tercepat: aplikasi + PostgreSQL langsung jalan tanpa install apa pun selain Docker.
+
+### Lokal
+
+```bash
+cp .env.example .env
+# isi AUTH_SECRET di .env  (openssl rand -base64 48)
+docker compose up --build
+```
+
+Buka http://localhost:3000. Container akan otomatis sinkron skema database dan mengisi data contoh (karena `RUN_SEED=true`). Setelah data nyata masuk, set `RUN_SEED=false` di `.env`.
+
+### Production (otakademi.online)
+
+Stack produksi menyertakan Caddy sebagai reverse proxy dengan HTTPS otomatis.
+
+Prasyarat: DNS A record `otakademi.online` (dan `www`) mengarah ke IP server, port 80 & 443 terbuka.
+
+```bash
+cp .env.production.example .env.production
+# cek/ubah: SEED_ADMIN_PASSWORD, dan sesuaikan email di Caddyfile
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+```
+
+Sertifikat HTTPS diterbitkan otomatis saat pertama diakses. Setelah deploy pertama berhasil, set `RUN_SEED=false` di `.env.production` lalu jalankan ulang perintah `up -d` untuk deploy berikutnya.
+
+Perintah berguna:
+
+```bash
+docker compose logs -f app          # lihat log aplikasi
+docker compose down                 # hentikan
+docker compose down -v              # hentikan + hapus data (hati-hati)
+```
+
+---
+
+## Deploy ke produksi (tanpa Docker)
 
 1. Set semua variabel `.env` di host (`DATABASE_URL`, `AUTH_SECRET` acak, `NEXT_PUBLIC_SITE_URL` domain asli).
 2. Jalankan skema: `npm run db:push`.

@@ -23,14 +23,20 @@ const FORMAT_ICON: Record<EventFormatName, IconName> = {
 
 export const revalidate = 60;
 
-/** Pre-render the live events at build time; the rest render on first request. */
+// Pre-render live events at build time when a database is reachable. During a
+// Docker image build there is no DB, so a failed query just yields an empty list
+// and every event page renders on first request instead (still cached via ISR).
 export async function generateStaticParams() {
-  const events = await db.event.findMany({
-    where: { status: { in: ["PUBLISHED", "SOLD_OUT"] } },
-    select: { slug: true },
-    take: 50,
-  });
-  return events.map((e) => ({ slug: e.slug }));
+  try {
+    const events = await db.event.findMany({
+      where: { status: { in: ["PUBLISHED", "SOLD_OUT"] } },
+      select: { slug: true },
+      take: 50,
+    });
+    return events.map((e) => ({ slug: e.slug }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({

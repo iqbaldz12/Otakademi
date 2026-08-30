@@ -242,7 +242,7 @@ async function main() {
 
   // ---- Admin users ----
   const adminEmail = (process.env.SEED_ADMIN_EMAIL ?? "admin@otakademi.id").toLowerCase();
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "Otakademi2026!";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "password";
 
   const adminHash = await hashPassword(adminPassword);
 
