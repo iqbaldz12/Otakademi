@@ -28,7 +28,6 @@ Alur utama: **Landing -> Event -> Registrasi -> Pembayaran -> Tiket/Check-in -> 
 - npm v10 atau lebih baru
 - PostgreSQL 14+ yang sedang berjalan (`psql --version`)
 
-]633;E;printf -- '---\\n\\n';c818a6e2-68ca-48b5-bdf2-d2505ae2d8d7]633;C---
 
 ## Setup (Linux / macOS)
 
@@ -48,7 +47,6 @@ Di dalam prompt psql:
 CREATE ROLE otakademi WITH LOGIN PASSWORD 'password-anda';
 ALTER ROLE otakademi CREATEDB;
 CREATE DATABASE otakademi_app OWNER otakademi;
-\q
 ```
 
 ### 3. Konfigurasi environment
@@ -69,7 +67,6 @@ npm run db:seed
 npm run dev
 ```
 
-]633;E;printf -- '---\\n\\n';27d5acc4-5d4b-481b-8ecc-77cd6463bf03]633;C---
 
 ## Setup (Windows)
 
