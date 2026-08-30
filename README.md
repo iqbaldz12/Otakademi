@@ -197,4 +197,4 @@ Catatan:
 
 ## Lisensi
 
-Proprietary - (c) Otakademi.
+Proprietary - Copyright © Otakademi.
