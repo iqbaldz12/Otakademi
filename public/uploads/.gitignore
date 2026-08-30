@@ -1,0 +1,4 @@
+# Uploaded media is user content, not source. Ignore everything here except
+# this file, so the directory exists in the repo but its contents stay local.
+*
+!.gitignore

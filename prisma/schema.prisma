@@ -1,0 +1,278 @@
+// OTAKADEMI - Prisma schema (PostgreSQL)
+// Relational model per spec section 6 (Data) & 7 (Status)
+
+generator client {
+  provider = "prisma-client-js"
+  // Default output (node_modules/.prisma/client). Keeping it there means the
+  // import specifier stays "@prisma/client", which Next can treat as an
+  // external package instead of tracing Prisma's engine loader into the bundle.
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- ENUMS (spec section 7) ----------
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  SOLD_OUT
+  COMPLETED
+  CANCELLED
+}
+
+enum EventFormat {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
+enum RegistrationStatus {
+  PENDING
+  WAITING_PAYMENT
+  CONFIRMED
+  WAITLIST
+  CANCELLED
+  ATTENDED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+enum PromoType {
+  FIXED
+  PERCENT
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  EVENT_ADMIN
+  FINANCE
+  CONTENT
+}
+
+// ---------- MODELS ----------
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  category    String
+  format      EventFormat @default(ONLINE)
+  venue       String?
+  meetingLink String?
+  startAt     DateTime
+  endAt       DateTime
+  capacity    Int         @default(0) // 0 = unlimited
+  price       Int         @default(0) // IDR; 0 = free
+  status      EventStatus @default(DRAFT)
+  /// Uploaded banner path (e.g. /uploads/xxx.webp). Falls back to bannerColor.
+  bannerImage String?
+  bannerColor String      @default("#FF6B6B")
+  mentorName  String?
+  mentorTitle String?
+  /// Optional mentor headshot path.
+  mentorPhoto String?
+  /// Optional supporting link for the mentor (LinkedIn, portfolio, etc.).
+  mentorLink  String?
+  /// Label for the mentor link, e.g. "LinkedIn" or "Portofolio".
+  mentorLinkLabel String?
+  summary     String?
+  description String?
+  outcomes    String[]    @default([]) // "what you get" bullets
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  registrations Registration[]
+
+  @@index([status])
+  @@index([startAt])
+}
+
+model Participant {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  institution String?
+  city        String?
+  occupation  String?
+  consent     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  registrations Registration[]
+
+  @@index([email])
+}
+
+model Registration {
+  id            String             @id @default(cuid())
+  code          String             @unique
+  eventId       String
+  participantId String
+  status        RegistrationStatus @default(PENDING)
+  source        String?
+  referral      String?
+  promoCode     String?
+  answers       Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  payment     Payment?
+  ticket      Ticket?
+
+  @@index([eventId])
+  @@index([status])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  registrationId String        @unique
+  amount         Int
+  method         String?
+  providerRef    String?
+  status         PaymentStatus @default(UNPAID)
+  paidAt         DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime      @default(now())
+
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+}
+
+model Ticket {
+  id             String    @id @default(cuid())
+  registrationId String    @unique
+  token          String    @unique
+  issuedAt       DateTime  @default(now())
+  checkInAt      DateTime?
+
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+}
+
+model Promo {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  type      PromoType @default(PERCENT)
+  value     Int
+  startAt   DateTime?
+  endAt     DateTime?
+  quota     Int       @default(0) // 0 = unlimited
+  usage     Int       @default(0)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  template  String
+  recipient String
+  channel   NotificationChannel @default(EMAIL)
+  status    NotificationStatus  @default(QUEUED)
+  sentAt    DateTime?
+  createdAt DateTime            @default(now())
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  /// scrypt hash, stored as `salt:derivedKey` in hex. Never a plaintext password.
+  passwordHash String
+  role         AdminRole @default(EVENT_ADMIN)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+/// Lightweight audit trail: "Riwayat perubahan penting untuk troubleshooting".
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  target    String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Lightweight CMS
+// ---------------------------------------------------------------------------
+
+/// Editable contact channels shown on /kontak and in the footer.
+/// The team can add, edit, reorder, hide, and delete these without a deploy.
+model ContactChannel {
+  id        String   @id @default(cuid())
+  /// Which inline icon to render (validated against a fixed allow-list).
+  icon      String   @default("mail")
+  label     String
+  /// Human-readable value shown on the card, e.g. "+62 812-3456-7890".
+  value     String
+  /// Where the card links to: tel:, mailto:, https:, or wa.me link.
+  href      String
+  /// Short helper line under the value.
+  note      String?
+  /// Highlights one channel (e.g. WhatsApp) with the accent treatment.
+  primary   Boolean  @default(false)
+  /// Hidden from the public site when false, but kept for later.
+  active    Boolean  @default(true)
+  /// Manual ordering; lower shows first.
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, sortOrder])
+}
+
+/// Generic key/value store for editable page copy (contact hero, hours, topics).
+/// Keeping this as loose settings avoids a migration every time the team wants
+/// to tweak a sentence, while structured data (events, channels) stays typed.
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+/// Repeatable landing-page content the team can add/edit/remove/reorder.
+/// One table with a `section` discriminator keeps the CMS simple: the admin
+/// manages each section as its own list, and the landing page groups by section.
+model LandingBlock {
+  id        String   @id @default(cuid())
+  /// "BENEFIT" | "STEP" | "TESTIMONIAL" | "FAQ" (validated in app code).
+  section   String
+  /// Icon name (BENEFIT), step number (STEP), or empty for others.
+  icon      String?
+  /// Title (BENEFIT/STEP), person name (TESTIMONIAL), or question (FAQ).
+  title     String
+  /// Body copy, quote text, or answer.
+  body      String
+  /// Extra field: role/company (TESTIMONIAL). Unused elsewhere.
+  meta      String?
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([section, active, sortOrder])
+}
