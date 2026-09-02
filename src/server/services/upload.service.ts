@@ -12,8 +12,8 @@ import { randomBytes } from "node:crypto";
  * storage, since the local disk isn't shared or persistent.
  */
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
-const PUBLIC_PREFIX = "/uploads";
+export const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
+export const PUBLIC_PREFIX = "/uploads";
 
 /** Accepted image types mapped to their canonical extension. */
 const ALLOWED = new Map<string, string>([
