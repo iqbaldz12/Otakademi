@@ -1,0 +1,5 @@
+# Keep shell scripts LF so they run inside Linux containers regardless of the
+# host's autocrlf setting. A CRLF shebang breaks `exec` with a confusing
+# "no such file or directory" error.
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
