@@ -138,6 +138,56 @@ Skrip backup tidak terpengaruh (tetap membaca kredensial dari `.env.production`)
 COMPOSE_FILE=docker-compose.host-caddy.yml ./scripts/backup-db.sh
 ```
 
+## Opsi C: Caddy Sudah Jalan di Dalam Docker
+
+Kalau Caddy di server berjalan sebagai container Docker (bukan systemd host), gunakan `docker-compose.docker-caddy.yml`. App bergabung ke network Docker milik Caddy, dan Caddy mem-proxy ke app lewat **nama container** — bukan `127.0.0.1` (yang di dalam container Caddy menunjuk ke dirinya sendiri).
+
+### 1. Cari network & lokasi Caddyfile
+
+```bash
+docker inspect caddy --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}'
+docker inspect caddy --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
+```
+
+Contoh hasil: network `resource`, Caddyfile di `/var/www/resource-data/caddy/config/Caddyfile`.
+
+> `docker-compose.docker-caddy.yml` sudah memakai network eksternal bernama `resource`. Kalau network Caddy kamu bernama lain, ganti nama itu di bagian `networks:` file tersebut (dua tempat: di service `app` dan di bawah `networks:`).
+
+### 2. Deploy stack
+
+```bash
+COMPOSE_FILE=docker-compose.docker-caddy.yml ./scripts/deploy.sh
+```
+
+Container app diberi nama tetap `otakademi-app` dan tidak expose port ke host — Caddy menjangkaunya lewat network bersama.
+
+### 3. Tambahkan reverse proxy ke Caddyfile
+
+Edit file Caddyfile yang ketemu di langkah 1, tambahkan (lihat `caddy-host.example.conf`, Kasus 1):
+
+```caddy
+otakademi.online, www.otakademi.online {
+	reverse_proxy otakademi-app:3000
+	encode gzip zstd
+}
+```
+
+### 4. Reload Caddy (container)
+
+```bash
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+Kalau perintah reload gagal karena path config berbeda, cek dulu: `docker exec caddy ls /etc/caddy`.
+
+### 5. Update & operasional (Opsi C)
+
+```bash
+COMPOSE_FILE=docker-compose.docker-caddy.yml ./scripts/deploy.sh              # update
+COMPOSE_FILE=docker-compose.docker-caddy.yml ./scripts/backup-db.sh           # backup
+docker compose -f docker-compose.docker-caddy.yml --env-file .env.production logs -f app
+```
+
 ## Update Aplikasi
 
 Setelah ada perubahan kode:
