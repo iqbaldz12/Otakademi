@@ -83,6 +83,61 @@ Edit `.env.production`, set `RUN_SEED="false"`, lalu jalankan ulang:
 ./scripts/deploy.sh
 ```
 
+## Opsi B: Server Sudah Punya Caddy Sendiri (host-level)
+
+Kalau Caddy sudah terpasang langsung di server (bukan container) dan meng-handle beberapa domain, gunakan compose varian tanpa Caddy: `docker-compose.host-caddy.yml`. App hanya di-bind ke `127.0.0.1:3000`, dan Caddy host yang meneruskan trafik.
+
+### 1. Deploy stack (tanpa container Caddy)
+
+Langkah 1-5 sama seperti di atas. Yang berbeda hanya perintah deploy — beri tahu skrip untuk memakai file compose host-caddy:
+
+```bash
+COMPOSE_FILE=docker-compose.host-caddy.yml ./scripts/deploy.sh
+```
+
+Atau manual:
+
+```bash
+docker compose -f docker-compose.host-caddy.yml --env-file .env.production up -d --build
+```
+
+Setelah ini, app dapat diakses lokal di `http://127.0.0.1:3000` (belum publik).
+
+### 2. Tambahkan reverse proxy di Caddy host
+
+Edit Caddyfile host (biasanya `/etc/caddy/Caddyfile`) dan tambahkan blok berikut. Contohnya juga tersedia di `caddy-host.example.conf`:
+
+```caddy
+otakademi.online, www.otakademi.online {
+	reverse_proxy 127.0.0.1:3000
+	encode gzip zstd
+}
+```
+
+Lalu reload Caddy:
+
+```bash
+sudo systemctl reload caddy
+```
+
+Caddy host akan mengurus sertifikat HTTPS Let's Encrypt otomatis untuk `otakademi.online`.
+
+### 3. Update & operasional (Opsi B)
+
+Semua perintah operasional sama, cukup pakai file compose host-caddy:
+
+```bash
+COMPOSE_FILE=docker-compose.host-caddy.yml ./scripts/deploy.sh    # update
+docker compose -f docker-compose.host-caddy.yml --env-file .env.production ps
+docker compose -f docker-compose.host-caddy.yml --env-file .env.production logs -f app
+```
+
+Skrip backup tidak terpengaruh (tetap membaca kredensial dari `.env.production`), tapi jika kamu memakai file compose non-default, jalankan dengan:
+
+```bash
+COMPOSE_FILE=docker-compose.host-caddy.yml ./scripts/backup-db.sh
+```
+
 ## Update Aplikasi
 
 Setelah ada perubahan kode:

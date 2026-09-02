@@ -10,8 +10,8 @@
 # ===========================================================================
 set -eu
 
-COMPOSE_FILE="docker-compose.prod.yml"
-ENV_FILE=".env.production"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+ENV_FILE="${ENV_FILE:-.env.production}"
 BACKUP_DIR="backups"
 RETENTION_DAYS=14
 

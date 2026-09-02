@@ -1,0 +1,53 @@
+# Production stack untuk server yang SUDAH punya Caddy sendiri (host-level).
+# Bedanya dengan docker-compose.prod.yml: TIDAK menjalankan container Caddy.
+# App di-expose ke 127.0.0.1:3000 saja, lalu Caddy host mem-reverse_proxy ke sana.
+#
+# Di server:
+#   cp .env.production.example .env.production   (cek & sesuaikan nilainya)
+#   docker compose -f docker-compose.host-caddy.yml --env-file .env.production up -d --build
+#
+# Lalu tambahkan blok reverse_proxy di Caddyfile host (lihat DEPLOY.md).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - otakademi_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Tidak expose port ke host; hanya dijangkau lewat jaringan internal.
+
+  app:
+    build:
+      context: .
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
+      AUTH_SECRET: ${AUTH_SECRET}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
+      # Seed sekali di deploy pertama, lalu set RUN_SEED=false.
+      RUN_SEED: ${RUN_SEED:-false}
+    volumes:
+      - otakademi_uploads:/app/public/uploads
+    # Bind HANYA ke loopback host. Caddy host yang meneruskan trafik publik ke sini.
+    # Tidak memakai 0.0.0.0 supaya port 3000 tidak terbuka ke internet.
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  otakademi_pgdata:
+  otakademi_uploads:

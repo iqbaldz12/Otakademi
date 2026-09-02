@@ -15,8 +15,11 @@
 # ===========================================================================
 set -eu
 
-COMPOSE_FILE="docker-compose.prod.yml"
-ENV_FILE=".env.production"
+# File compose bisa dioverride. Default: stack all-in-Docker (dengan Caddy).
+# Untuk server yang sudah punya Caddy host, jalankan:
+#   COMPOSE_FILE=docker-compose.host-caddy.yml ./scripts/deploy.sh
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+ENV_FILE="${ENV_FILE:-.env.production}"
 APP_SERVICE="app"
 
 # Warna sederhana (diabaikan bila terminal tak mendukung).
