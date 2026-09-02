@@ -102,7 +102,7 @@ export async function Footer() {
 
         <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-navy-100 pt-6 sm:flex-row sm:items-center">
           <p className="text-xs text-navy-400">
-            &copy; {new Date().getFullYear()} Otakademi. Learn &middot; Think &middot; Try.
+            &copy; {new Date().getFullYear()} Otakademi. Learn &middot; Think &middot; Try. Powered by <a target="_blank" href="https://someah.id">Someah</a>
           </p>
           <Link
             href="/admin"
