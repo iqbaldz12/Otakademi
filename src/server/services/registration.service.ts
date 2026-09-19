@@ -222,7 +222,13 @@ export async function registerForEvent(
 export async function getRegistrationByCode(code: string) {
   return db.registration.findUnique({
     where: { code },
-    include: { event: true, participant: true, payment: true, ticket: true },
+    include: {
+      event: true,
+      participant: true,
+      payment: true,
+      ticket: true,
+      attendance: true,
+    },
   });
 }
 

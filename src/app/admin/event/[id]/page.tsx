@@ -132,6 +132,7 @@ export default async function EditEventPage({
           mentorPhoto: event.mentorPhoto ?? "",
           mentorLink: event.mentorLink ?? "",
           mentorLinkLabel: event.mentorLinkLabel ?? "",
+          whatsappLink: event.whatsappLink ?? "",
           bannerImage: event.bannerImage ?? "",
           bannerColor: event.bannerColor,
           summary: event.summary ?? "",

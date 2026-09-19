@@ -71,6 +71,12 @@ enum AdminRole {
   CONTENT
 }
 
+/// How an attendance record was created.
+enum AttendanceMethod {
+  SELF  // participant marked their own presence from the ticket page
+  ADMIN // admin/panitia marked it manually
+}
+
 // ---------- MODELS ----------
 model Event {
   id          String      @id @default(cuid())
@@ -96,6 +102,11 @@ model Event {
   mentorLink  String?
   /// Label for the mentor link, e.g. "LinkedIn" or "Portofolio".
   mentorLinkLabel String?
+  /// Optional WhatsApp group/chat link shown to confirmed registrants on their ticket.
+  whatsappLink String?
+  /// Admin-controlled attendance switch. When true, confirmed participants can
+  /// self check-in from their ticket (like opening a webinar room manually).
+  attendanceOpen Boolean @default(false)
   summary     String?
   description String?
   outcomes    String[]    @default([]) // "what you get" bullets
@@ -103,6 +114,7 @@ model Event {
   updatedAt   DateTime    @updatedAt
 
   registrations Registration[]
+  attendances   Attendance[]
 
   @@index([status])
   @@index([startAt])
@@ -141,6 +153,7 @@ model Registration {
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   payment     Payment?
   ticket      Ticket?
+  attendance  Attendance?
 
   @@index([eventId])
   @@index([status])
@@ -168,6 +181,29 @@ model Ticket {
   checkInAt      DateTime?
 
   registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+}
+
+/// Event attendance record.
+///
+/// One row per registration (a participant can only be "present" once per
+/// event). Related to both Event (for fast per-event rosters/reports) and
+/// Registration (the person + their ticket). `method` distinguishes a
+/// self-service check-in on the ticket page from an admin marking it manually.
+model Attendance {
+  id             String           @id @default(cuid())
+  eventId        String
+  registrationId String           @unique
+  method         AttendanceMethod @default(SELF)
+  /// Who recorded it: participant name for SELF, admin email for ADMIN.
+  markedBy       String?
+  /// Optional free-text note (e.g. "izin telat", "hadir sebagian").
+  note           String?
+  checkedInAt    DateTime         @default(now())
+
+  event        Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
 }
 
 model Promo {

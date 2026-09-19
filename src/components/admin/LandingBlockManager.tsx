@@ -148,10 +148,9 @@ export function LandingBlockManager({
                 <ConfirmButton
                   action={() => deleteBlockAction(b.id)}
                   confirmLabel="Hapus"
+                  ariaLabel={`Hapus ${b.title}`}
                   successMessage="Item dihapus."
-                >
-                  <Icon name="trash" size={14} />
-                </ConfirmButton>
+                />
               </li>
             ))}
           </ul>

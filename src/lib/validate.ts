@@ -158,6 +158,7 @@ export type EventInput = {
   mentorPhoto?: string;
   mentorLink?: string;
   mentorLinkLabel?: string;
+  whatsappLink?: string;
   bannerImage?: string;
   bannerColor: string;
   summary?: string;
@@ -249,6 +250,23 @@ export function validateEvent(form: FormData): ValidationResult<EventInput> {
     }
   }
 
+  // WhatsApp link for confirmed registrants. Only http(s) is allowed (covers
+  // https://wa.me/62..., https://chat.whatsapp.com/..., or a group invite).
+  const whatsappLinkRaw = raw(form, "whatsappLink");
+  let whatsappLink: string | undefined;
+  if (whatsappLinkRaw) {
+    if (/^https?:\/\//i.test(whatsappLinkRaw)) {
+      try {
+        new URL(whatsappLinkRaw);
+        whatsappLink = whatsappLinkRaw;
+      } catch {
+        errors.whatsappLink = "Link WhatsApp tidak valid.";
+      }
+    } else {
+      errors.whatsappLink = "Link harus diawali https://, contoh: https://wa.me/62812...";
+    }
+  }
+
   if (title.length < 3) errors.title = "Judul minimal 3 karakter.";
   if (title.length > 160) errors.title = "Judul maksimal 160 karakter.";
   if (!category) errors.category = "Kategori wajib diisi.";
@@ -322,6 +340,7 @@ export function validateEvent(form: FormData): ValidationResult<EventInput> {
       mentorPhoto,
       mentorLink,
       mentorLinkLabel: mentorLink ? mentorLinkLabel : undefined,
+      whatsappLink,
       bannerImage,
       bannerColor,
       summary,

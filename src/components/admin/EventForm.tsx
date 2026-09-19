@@ -75,6 +75,7 @@ export type EventFormValues = {
   mentorPhoto: string;
   mentorLink: string;
   mentorLinkLabel: string;
+  whatsappLink: string;
   bannerImage: string;
   bannerColor: string;
   summary: string;
@@ -517,6 +518,28 @@ export function EventForm({
                 className="field"
               />
             </div>
+          </div>
+
+          {/* WhatsApp link shown to confirmed registrants on their ticket */}
+          <div>
+            <label htmlFor="whatsappLink" className="label">
+              Link grup / kontak WhatsApp (opsional)
+            </label>
+            <input
+              id="whatsappLink"
+              name="whatsappLink"
+              type="url"
+              defaultValue={initial.whatsappLink}
+              placeholder="https://chat.whatsapp.com/... atau https://wa.me/62812..."
+              className="field"
+              {...aria("whatsappLink")}
+            />
+            {err("whatsappLink") ?? (
+              <p className="hint">
+                Tampil sebagai tombol di halaman tiket setelah peserta terkonfirmasi,
+                supaya bisa langsung diarahkan ke WhatsApp.
+              </p>
+            )}
           </div>
 
           {/* Banner image (falls back to the accent colour when empty) */}

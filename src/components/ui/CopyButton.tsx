@@ -8,10 +8,13 @@ export function CopyButton({
   value,
   label = "Salin",
   className = "",
+  iconOnly = false,
 }: {
   value: string;
   label?: string;
   className?: string;
+  /** Render just the icon (with an accessible label), no visible text. */
+  iconOnly?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -33,6 +36,21 @@ export function CopyButton({
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     }
+  }
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        onClick={copy}
+        title={copied ? "Tersalin" : label}
+        aria-label={copied ? "Tersalin" : label}
+        aria-live="polite"
+        className={`inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-navy-200 text-navy-600 transition-colors hover:bg-navy-50 hover:text-navy-900 ${className}`}
+      >
+        <Icon name={copied ? "check" : "copy"} size={16} />
+      </button>
+    );
   }
 
   return (

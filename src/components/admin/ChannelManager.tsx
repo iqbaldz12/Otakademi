@@ -149,11 +149,9 @@ export function ChannelManager({ channels }: { channels: ChannelRow[] }) {
                 <ConfirmButton
                   action={() => deleteChannelAction(c.id)}
                   confirmLabel="Hapus"
+                  ariaLabel={`Hapus ${c.label}`}
                   successMessage={`${c.label} dihapus.`}
-                >
-                  <span className="sr-only-x">Hapus {c.label}</span>
-                  <Icon name="trash" size={14} />
-                </ConfirmButton>
+                />
               </li>
             ))}
           </ul>

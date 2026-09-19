@@ -19,14 +19,17 @@ export function ConfirmButton({
   variant = "danger",
   size = "sm",
   successMessage,
+  ariaLabel = "Hapus",
 }: {
   action: () => Promise<{ ok: boolean; reason?: string }>;
-  children: React.ReactNode;
+  /** Optional label. When omitted the button is icon-only (use ariaLabel). */
+  children?: React.ReactNode;
   confirmLabel?: string;
   icon?: IconName;
   variant?: "danger" | "outline" | "ghost";
   size?: "sm" | "md";
   successMessage?: string;
+  ariaLabel?: string;
 }) {
   const [armed, setArmed] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -89,7 +92,12 @@ export function ConfirmButton({
   }
 
   return (
-    <button type="button" onClick={arm} className={`btn btn-${variant} btn-${size}`}>
+    <button
+      type="button"
+      onClick={arm}
+      aria-label={children ? undefined : ariaLabel}
+      className={`btn btn-${variant} btn-${size}`}
+    >
       <Icon name={icon} size={15} />
       {children}
     </button>

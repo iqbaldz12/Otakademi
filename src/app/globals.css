@@ -609,6 +609,17 @@
     }
   }
 
+  /* Mobile drawer: transform only, so the solid panel never renders
+     see-through mid-transition (opacity is intentionally not animated). */
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
   /* Entrance animations for above-the-fold content (runs immediately) */
   .anim-enter {
     animation: reveal-up 0.72s var(--ease-out-expo) both;

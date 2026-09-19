@@ -62,6 +62,15 @@ export function EventRowActions({
         <span className="sr-only-x">Lihat halaman publik {title}</span>
       </Link>
 
+      <Link
+        href={`/admin/event/${eventId}/absen`}
+        className="btn btn-ghost btn-sm"
+        title={`Lihat absensi ${title}`}
+      >
+        <Icon name="check-circle" size={15} />
+        Absen
+      </Link>
+
       <Link href={`/admin/event/${eventId}`} className="btn btn-outline btn-sm">
         <Icon name="edit" size={15} />
         Edit

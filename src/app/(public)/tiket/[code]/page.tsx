@@ -5,6 +5,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Logo } from "@/components/site/Logo";
+import { SelfCheckIn } from "@/components/site/SelfCheckIn";
 import { getRegistrationByCode } from "@/server/services/registration.service";
 import { renderQrSvg, ticketPayload } from "@/server/services/ticket.service";
 import {
@@ -51,8 +52,27 @@ export default async function TicketPage({
   const awaitingPayment = reg.status === "WAITING_PAYMENT";
   const isWaitlist = reg.status === "WAITLIST";
 
-  // Only render a QR once the ticket is actually valid for entry.
-  const qrSvg = ticket && isConfirmed ? await renderQrSvg(ticketPayload(ticket.token)) : null;
+  // Online/hybrid events join through a meeting link instead of a physical QR
+  // check-in. The QR only makes sense when there's a room to walk into.
+  const isOnline = event.format === "ONLINE" || event.format === "HYBRID";
+
+  // Only render a QR for offline entry once the ticket is valid.
+  const qrSvg =
+    ticket && isConfirmed && !isOnline
+      ? await renderQrSvg(ticketPayload(ticket.token))
+      : null;
+
+  // The meeting link is sensitive: only reveal it to a confirmed (paid)
+  // participant, and only when the admin has actually set it on the event.
+  const meetingLink = isOnline && isConfirmed ? event.meetingLink : null;
+
+  // Self check-in: confirmed participants can mark their own attendance only
+  // while the admin has opened attendance for the event (like a webinar room
+  // opened manually by the host). Once someone is already present, they keep
+  // seeing their confirmed state even after it's closed again.
+  const alreadyPresent = Boolean(reg.attendance);
+  const attendanceOpen = event.attendanceOpen;
+  const canSelfCheckIn = isConfirmed && (alreadyPresent || attendanceOpen);
 
   const location =
     event.format === "ONLINE"
@@ -116,7 +136,9 @@ export default async function TicketPage({
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-navy-600">
               {isConfirmed
-                ? "Simpan halaman ini. Tunjukkan QR di bawah saat check-in."
+                ? isOnline
+                  ? "Simpan halaman ini. Tombol untuk masuk kelas online ada di bawah."
+                  : "Simpan halaman ini. Tunjukkan QR di bawah saat check-in."
                 : awaitingPayment
                   ? "Kursimu ditahan sampai batas waktu pembayaran. Selesaikan pembayaran untuk menerbitkan tiket."
                   : isWaitlist
@@ -192,13 +214,84 @@ export default async function TicketPage({
                   </code>
                   <CopyButton value={reg.code} label="Salin kode" className="no-print" />
                 </div>
+                <p className="mt-2 flex items-start gap-1.5 text-xs text-navy-500">
+                  <Icon name="info" size={13} className="mt-px shrink-0 text-navy-400" />
+                  Simpan kode ini. Kalau link tiket hilang, buka{" "}
+                  <Link
+                    href="/cek-tiket"
+                    className="font-semibold text-navy-700 underline decoration-navy-300 underline-offset-2"
+                  >
+                    /cek-tiket
+                  </Link>{" "}
+                  dan masukkan kode ini untuk membuka tiket lagi.
+                </p>
               </div>
             </div>
 
-            {/* QR */}
-            <div className="flex flex-col items-center justify-start md:w-44">
-              {qrSvg ? (
+            {/*
+              Access area, all inside this one card:
+              - Offline: physical check-in QR.
+              - Online: the meeting link (text + copy) plus the WhatsApp group.
+              Sensitive links only appear once the registration is confirmed.
+            */}
+            <div className="flex flex-col justify-start gap-3 md:w-56">
+              {isOnline ? (
                 <>
+                  {/* Meeting link */}
+                  {meetingLink ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5">
+                      <span className="flex items-center gap-1.5 text-[0.7rem] font-extrabold uppercase tracking-wide text-emerald-700">
+                        <Icon name="monitor" size={14} />
+                        Link Kelas Online
+                      </span>
+                      <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-white p-1.5 pl-2.5">
+                        <a
+                          href={meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-w-0 flex-1 truncate text-sm font-semibold text-navy-800 underline decoration-emerald-400 underline-offset-2 hover:text-emerald-700"
+                        >
+                          {meetingLink}
+                        </a>
+                        <CopyButton
+                          value={meetingLink}
+                          label="Salin link"
+                          iconOnly
+                          className="no-print border-emerald-200"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 rounded-xl border border-dashed border-navy-200 bg-surface p-3.5">
+                      <Icon name="monitor" size={18} className="mt-0.5 shrink-0 text-navy-300" />
+                      <p className="text-xs font-semibold text-navy-400">
+                        {isConfirmed
+                          ? "Link kelas dibagikan menjelang acara."
+                          : awaitingPayment
+                            ? "Link kelas muncul setelah pembayaran dikonfirmasi."
+                            : isWaitlist
+                              ? "Link kelas dibagikan kalau kursi tersedia."
+                              : "Link kelas belum tersedia."}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* WhatsApp group, same card */}
+                  {isConfirmed && event.whatsappLink && (
+                    <a
+                      href={event.whatsappLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-primary btn-sm w-full no-print"
+                    >
+                      <Icon name="whatsapp" size={16} />
+                      Gabung Grup WhatsApp
+                    </a>
+                  )}
+                </>
+              ) : qrSvg ? (
+                // ---- Offline: physical check-in QR ----
+                <div className="flex flex-col items-center">
                   <div
                     className="w-40 rounded-xl border border-navy-100 bg-white p-3"
                     // Server-generated SVG from our own token, not user input.
@@ -207,9 +300,20 @@ export default async function TicketPage({
                   <p className="mt-2 text-center text-[0.7rem] font-semibold text-navy-400">
                     Tunjukkan saat check-in
                   </p>
-                </>
+                  {isConfirmed && event.whatsappLink && (
+                    <a
+                      href={event.whatsappLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-primary btn-sm mt-3 w-40 no-print"
+                    >
+                      <Icon name="whatsapp" size={16} />
+                      Grup WhatsApp
+                    </a>
+                  )}
+                </div>
               ) : (
-                <div className="flex w-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-navy-200 bg-surface p-5 text-center">
+                <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-navy-200 bg-surface p-5 text-center">
                   <Icon name="qr" size={30} className="text-navy-200" />
                   <p className="text-[0.7rem] font-semibold text-navy-400">
                     {awaitingPayment
@@ -231,6 +335,31 @@ export default async function TicketPage({
             </div>
           )}
         </div>
+
+        {/* ---------- Self attendance (confirmed participants) ---------- */}
+        {isConfirmed && (
+          <div className="card mt-6 p-5 sm:p-6">
+            <div className="flex items-start gap-3">
+              <Icon name="check-circle" size={24} className="mt-0.5 shrink-0 text-emerald-600" />
+              <div className="flex-1">
+                <h2 className="text-h3">Absensi Kehadiran</h2>
+                <p className="mt-1 text-sm leading-relaxed text-navy-600">
+                  {alreadyPresent
+                    ? "Kehadiran kamu sudah tercatat."
+                    : attendanceOpen
+                      ? "Absensi sudah dibuka. Tekan tombol di bawah untuk mencatat kehadiranmu."
+                      : "Absensi belum dibuka panitia. Tombol akan aktif saat kelas dimulai."}
+                </p>
+              </div>
+            </div>
+
+            {canSelfCheckIn && (
+              <div className="mt-4">
+                <SelfCheckIn code={reg.code} initialPresent={alreadyPresent} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ---------- Payment panel ---------- */}
         {payment && payment.status !== "PAID" && (
@@ -317,7 +446,8 @@ export default async function TicketPage({
         </div>
 
         <p className="mt-6 text-center text-xs text-navy-400">
-          Simpan link halaman ini untuk mengakses tiketmu kapan saja.
+          Simpan link halaman ini atau kode <strong>{reg.code}</strong> untuk
+          mengakses tiketmu kapan saja lewat halaman Cek Tiket.
         </p>
       </div>
     </section>

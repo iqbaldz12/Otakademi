@@ -51,9 +51,10 @@ export default async function CekTiketPage({
             <Icon name="ticket" size={24} />
           </span>
 
-          <h1 className="mt-4 text-h2">Cek Tiket Saya</h1>
+          <h1 className="mt-4 text-h2">Cek Tiket &amp; Absen</h1>
           <p className="mt-2 text-navy-500">
-            Masukkan kode pendaftaran yang kamu terima setelah mendaftar.
+            Masukkan kode pendaftaran yang kamu terima setelah mendaftar untuk
+            membuka tiket sekaligus melakukan absensi saat kelas dimulai.
           </p>
 
           {error && (
