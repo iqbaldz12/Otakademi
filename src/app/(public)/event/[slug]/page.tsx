@@ -174,7 +174,7 @@ export default async function EventDetailPage({
 
       {/* Banner: uploaded image when present, otherwise the accent colour bar. */}
       {event.bannerImage ? (
-        <div className="relative aspect-[21/9] w-full overflow-hidden bg-navy-100 sm:aspect-[3/1]">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-navy-100">
           <Image
             src={event.bannerImage}
             alt={`Banner ${event.title}`}
@@ -274,6 +274,28 @@ export default async function EventDetailPage({
                         <p key={i}>{para}</p>
                       ))}
                   </div>
+                </div>
+              )}
+
+              {/* Video archive: shown once published; the actual video is
+                  unlocked on /arsip with a paid registration code. */}
+              {event.recordingOpen && event.recordingUrl && (
+                <div className="card mt-8 flex flex-col gap-4 border-navy-200 bg-navy-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                  <div className="flex items-start gap-3">
+                    <Icon name="monitor" size={24} className="mt-0.5 shrink-0 text-navy-600" />
+                    <div>
+                      <h2 className="text-h3">Arsip Video Kelas</h2>
+                      <p className="mt-1 text-sm leading-relaxed text-navy-600">
+                        {event.price > 0
+                          ? "Rekaman kelas ini tersedia untuk peserta yang sudah bayar. Masukkan kode pendaftaran untuk menonton."
+                          : "Rekaman kelas ini tersedia untuk peserta terdaftar. Masukkan kode pendaftaran untuk menonton."}
+                      </p>
+                    </div>
+                  </div>
+                  <Link href="/arsip" className="btn btn-navy btn-md shrink-0">
+                    <Icon name="external" size={17} />
+                    Buka Arsip
+                  </Link>
                 </div>
               )}
 
