@@ -155,6 +155,7 @@ export async function createEvent(input: EventInput): Promise<Event> {
       mentorLink: input.mentorLink,
       mentorLinkLabel: input.mentorLinkLabel,
       whatsappLink: input.whatsappLink,
+      recordingUrl: input.recordingUrl,
       bannerImage: input.bannerImage,
       bannerColor: input.bannerColor,
       summary: input.summary,
@@ -195,6 +196,7 @@ export async function updateEvent(
       mentorLink: input.mentorLink,
       mentorLinkLabel: input.mentorLinkLabel,
       whatsappLink: input.whatsappLink,
+      recordingUrl: input.recordingUrl,
       bannerImage: input.bannerImage,
       bannerColor: input.bannerColor,
       summary: input.summary,
@@ -211,6 +213,32 @@ export async function updateEvent(
   }
 
   return updated;
+}
+
+/**
+ * Publishes or hides the recorded-session archive for an event.
+ *
+ * Requires a recording link to exist before it can be opened, so the admin
+ * can't advertise an archive that isn't there yet.
+ */
+export async function setRecordingOpen(
+  id: string,
+  open: boolean,
+): Promise<{ ok: true; slug: string } | { ok: false; reason: string }> {
+  const event = await db.event.findUnique({
+    where: { id },
+    select: { slug: true, recordingUrl: true },
+  });
+  if (!event) return { ok: false, reason: "Event tidak ditemukan." };
+  if (open && !event.recordingUrl) {
+    return {
+      ok: false,
+      reason: "Isi dulu link video arsip di menu Edit event sebelum menerbitkannya.",
+    };
+  }
+
+  await db.event.update({ where: { id }, data: { recordingOpen: open } });
+  return { ok: true, slug: event.slug };
 }
 
 /**

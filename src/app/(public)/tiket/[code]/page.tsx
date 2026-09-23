@@ -440,6 +440,12 @@ export default async function TicketPage({
             <Icon name="eye" size={16} />
             Detail Event
           </Link>
+          {event.recordingOpen && event.recordingUrl && (
+            <Link href={`/arsip?code=${reg.code}`} className="btn btn-outline btn-md">
+              <Icon name="monitor" size={16} />
+              Arsip Video
+            </Link>
+          )}
           <Link href="/event" className="btn btn-ghost btn-md">
             Cari Kelas Lain
           </Link>

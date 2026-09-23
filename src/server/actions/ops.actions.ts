@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin, audit, destroySession } from "@/server/auth";
 import { redirect } from "next/navigation";
-import { markPaid, setPaymentStatus, expireStalePayments } from "@/server/services/payment.service";
+import {
+  markPaid,
+  setPaymentStatus,
+  expireStalePayments,
+  updatePaymentMethod,
+} from "@/server/services/payment.service";
 import { checkInByToken, checkInByCode, undoCheckIn } from "@/server/services/ticket.service";
 import { setPromoActive, deletePromo, createPromo } from "@/server/services/promo.service";
 import type { PaymentStatus } from "@prisma/client";
@@ -44,6 +49,19 @@ export async function setPaymentStatusAction(
   revalidatePath("/admin/pembayaran");
   revalidatePath("/admin");
   return { ok: true, reason: `Status pembayaran: ${status}.` };
+}
+
+/** Admin edits the payment method label on a transaction. */
+export async function updatePaymentMethodAction(
+  paymentId: string,
+  method: string,
+): Promise<{ ok: boolean; reason?: string }> {
+  const session = await requireAdmin();
+  await updatePaymentMethod(paymentId, method);
+  await audit(session.email, "payment.method", paymentId, method || "(kosong)");
+
+  revalidatePath("/admin/pembayaran");
+  return { ok: true, reason: "Metode pembayaran diperbarui." };
 }
 
 export async function expirePaymentsAction(): Promise<{

@@ -6,6 +6,7 @@ import { requireAdmin, audit } from "@/server/auth";
 import { validateEvent, type FieldErrors } from "@/lib/validate";
 import {
   setEventActive,
+  setRecordingOpen,
   deleteEvent,
   cancelEvent,
   createEvent,
@@ -60,6 +61,33 @@ export async function toggleEventActive(
   // Pass the slug so the event's own cached detail page is dropped too.
   revalidateEventSurfaces(result.slug);
   return { ok: true };
+}
+
+/**
+ * Publishes/hides the recorded-session archive for an event. Only paid
+ * participants can watch once it's open (enforced in the archive service).
+ */
+export async function toggleRecordingAction(
+  eventId: string,
+  open: boolean,
+): Promise<ActionResult> {
+  const session = await requireAdmin();
+
+  const result = await setRecordingOpen(eventId, open);
+  if (!result.ok) return { ok: false, reason: result.reason };
+
+  await audit(
+    session.email,
+    open ? "event.recording.open" : "event.recording.close",
+    eventId,
+  );
+  revalidateEventSurfaces(result.slug);
+  revalidatePath("/arsip");
+
+  return {
+    ok: true,
+    reason: open ? "Arsip video diterbitkan." : "Arsip video disembunyikan.",
+  };
 }
 
 export async function deleteEventAction(eventId: string): Promise<ActionResult> {

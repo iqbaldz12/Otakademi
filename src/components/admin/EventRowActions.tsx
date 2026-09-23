@@ -6,6 +6,7 @@ import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { Icon } from "@/components/ui/Icon";
 import {
   toggleEventActive,
+  toggleRecordingAction,
   deleteEventAction,
 } from "@/server/actions/event.actions";
 import type { EventStatusName } from "@/lib/domain";
@@ -23,11 +24,15 @@ export function EventRowActions({
   slug,
   status,
   title,
+  hasRecording,
+  recordingOpen,
 }: {
   eventId: string;
   slug: string;
   status: EventStatusName;
   title: string;
+  hasRecording: boolean;
+  recordingOpen: boolean;
 }) {
   // SOLD_OUT still counts as active: registration is open, the seats just ran
   // out, and a waitlist is being collected.
@@ -70,6 +75,21 @@ export function EventRowActions({
         <Icon name="check-circle" size={15} />
         Absen
       </Link>
+
+      {/* Arsip video: terbitkan/sembunyikan rekaman untuk peserta yang sudah bayar */}
+      <span className="flex items-center gap-1.5" title="Arsip video rekaman">
+        <Icon name="monitor" size={15} className="text-navy-400" />
+        <span className="text-xs font-bold text-navy-500">Arsip</span>
+        <Switch
+          checked={recordingOpen}
+          disabled={!hasRecording}
+          disabledReason="Isi dulu link video arsip lewat menu Edit."
+          ariaLabel={`Terbitkan arsip video ${title}`}
+          messageOn="Arsip video terbit. Peserta yang sudah bayar bisa menonton."
+          messageOff="Arsip video disembunyikan."
+          onToggle={(next) => toggleRecordingAction(eventId, next)}
+        />
+      </span>
 
       <Link href={`/admin/event/${eventId}`} className="btn btn-outline btn-sm">
         <Icon name="edit" size={15} />

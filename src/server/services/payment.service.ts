@@ -155,6 +155,23 @@ export async function expireStalePayments(): Promise<{
   return { expired: stale.length, promoted };
 }
 
+/**
+ * Updates the payment method label (e.g. "Transfer BCA", "QRIS", "Tunai").
+ *
+ * Purely descriptive metadata; it doesn't change the paid/unpaid state. An
+ * empty value clears the field.
+ */
+export async function updatePaymentMethod(
+  paymentId: string,
+  method: string,
+): Promise<void> {
+  const trimmed = method.trim().slice(0, 60);
+  await db.payment.update({
+    where: { id: paymentId },
+    data: { method: trimmed || null },
+  });
+}
+
 export async function listPayments(filter: { status?: string } = {}) {
   return db.payment.findMany({
     where: filter.status ? { status: filter.status as PaymentStatus } : {},

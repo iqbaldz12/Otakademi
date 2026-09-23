@@ -50,6 +50,7 @@ export default function NewEventPage() {
           mentorLink: "",
           mentorLinkLabel: "",
           whatsappLink: "",
+          recordingUrl: "",
           bannerImage: "",
           bannerColor: "#F96469",
           summary: "",

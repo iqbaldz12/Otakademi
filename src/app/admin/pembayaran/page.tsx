@@ -4,6 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { ActionButton } from "@/components/admin/ActionButton";
 import { confirmPaymentAction, expirePaymentsAction } from "@/server/actions/ops.actions";
+import { PaymentMethodEditor } from "@/components/admin/PaymentMethodEditor";
 import { listPayments } from "@/server/services/payment.service";
 import { db } from "@/server/db";
 import { PAYMENT_STATUS, PAYMENT_STATUS_META, type PaymentStatusName } from "@/lib/domain";
@@ -168,17 +169,25 @@ export default async function PembayaranPage({
                         <p className="line-2 text-navy-700">{p.registration.event.title}</p>
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-3.5 text-right font-extrabold text-navy-900 tnum">
-                        {formatIDR(p.amount)}
-                        {p.method && (
-                          <span className="block text-[0.65rem] font-normal text-navy-400">
-                            {p.method}
-                          </span>
-                        )}
+                      <td className="whitespace-nowrap px-4 py-3.5 text-right">
+                        <span className="block font-extrabold text-navy-900 tnum">
+                          {formatIDR(p.amount)}
+                        </span>
+                        <span className="mt-0.5 block">
+                          <PaymentMethodEditor paymentId={p.id} method={p.method} />
+                        </span>
                       </td>
 
                       <td className="px-4 py-3.5">
-                        <Badge tone={meta.tone}>{meta.label}</Badge>
+                        <Badge tone={meta.tone} dot>
+                          {meta.label}
+                        </Badge>
+                        {p.status === "PAID" && (
+                          <span className="mt-1 flex items-center gap-1 text-[0.65rem] font-bold text-emerald-600">
+                            <Icon name="check-circle" size={12} />
+                            Sudah bayar
+                          </span>
+                        )}
                       </td>
 
                       <td className="whitespace-nowrap px-4 py-3.5 text-xs text-navy-500">

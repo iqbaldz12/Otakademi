@@ -159,6 +159,7 @@ export type EventInput = {
   mentorLink?: string;
   mentorLinkLabel?: string;
   whatsappLink?: string;
+  recordingUrl?: string;
   bannerImage?: string;
   bannerColor: string;
   summary?: string;
@@ -267,6 +268,22 @@ export function validateEvent(form: FormData): ValidationResult<EventInput> {
     }
   }
 
+  // Recorded-session archive link (YouTube/Vimeo/Drive/etc). Only http(s).
+  const recordingUrlRaw = raw(form, "recordingUrl");
+  let recordingUrl: string | undefined;
+  if (recordingUrlRaw) {
+    if (/^https?:\/\//i.test(recordingUrlRaw)) {
+      try {
+        new URL(recordingUrlRaw);
+        recordingUrl = recordingUrlRaw;
+      } catch {
+        errors.recordingUrl = "Link video tidak valid.";
+      }
+    } else {
+      errors.recordingUrl = "Link harus diawali https://, contoh: https://youtu.be/...";
+    }
+  }
+
   if (title.length < 3) errors.title = "Judul minimal 3 karakter.";
   if (title.length > 160) errors.title = "Judul maksimal 160 karakter.";
   if (!category) errors.category = "Kategori wajib diisi.";
@@ -341,6 +358,7 @@ export function validateEvent(form: FormData): ValidationResult<EventInput> {
       mentorLink,
       mentorLinkLabel: mentorLink ? mentorLinkLabel : undefined,
       whatsappLink,
+      recordingUrl,
       bannerImage,
       bannerColor,
       summary,

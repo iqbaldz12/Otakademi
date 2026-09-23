@@ -107,6 +107,12 @@ model Event {
   /// Admin-controlled attendance switch. When true, confirmed participants can
   /// self check-in from their ticket (like opening a webinar room manually).
   attendanceOpen Boolean @default(false)
+  /// Recorded-session archive link (YouTube/Vimeo/Drive). Shown only to paid
+  /// participants once the admin publishes it.
+  recordingUrl String?
+  /// Admin-controlled switch for the video archive. When false the archive is
+  /// hidden even if recordingUrl is set.
+  recordingOpen Boolean @default(false)
   summary     String?
   description String?
   outcomes    String[]    @default([]) // "what you get" bullets

@@ -222,6 +222,8 @@ export default async function AdminEventListPage({
                           slug={event.slug}
                           status={event.status as EventStatusName}
                           title={event.title}
+                          hasRecording={Boolean(event.recordingUrl)}
+                          recordingOpen={event.recordingOpen}
                         />
                       </td>
                     </tr>

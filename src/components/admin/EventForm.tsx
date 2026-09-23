@@ -76,6 +76,7 @@ export type EventFormValues = {
   mentorLink: string;
   mentorLinkLabel: string;
   whatsappLink: string;
+  recordingUrl: string;
   bannerImage: string;
   bannerColor: string;
   summary: string;
@@ -538,6 +539,29 @@ export function EventForm({
               <p className="hint">
                 Tampil sebagai tombol di halaman tiket setelah peserta terkonfirmasi,
                 supaya bisa langsung diarahkan ke WhatsApp.
+              </p>
+            )}
+          </div>
+
+          {/* Recorded-session archive link (shown to paid participants) */}
+          <div>
+            <label htmlFor="recordingUrl" className="label">
+              Link video arsip / rekaman (opsional)
+            </label>
+            <input
+              id="recordingUrl"
+              name="recordingUrl"
+              type="url"
+              defaultValue={initial.recordingUrl}
+              placeholder="https://youtu.be/... atau link Drive/Vimeo"
+              className="field"
+              {...aria("recordingUrl")}
+            />
+            {err("recordingUrl") ?? (
+              <p className="hint">
+                Untuk arsip setelah acara selesai. Hanya bisa ditonton peserta yang
+                sudah bayar, dan baru tampil setelah kamu terbitkan lewat tombol
+                &quot;Arsip Video&quot; di daftar event.
               </p>
             )}
           </div>

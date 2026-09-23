@@ -20,6 +20,7 @@ const COLUMNS = [
       { href: "/faq", label: "FAQ" },
       { href: "/kontak", label: "Hubungi Kami" },
       { href: "/cek-tiket", label: "Cek Tiket Saya" },
+      { href: "/arsip", label: "Arsip Video Kelas" },
     ],
   },
   {
