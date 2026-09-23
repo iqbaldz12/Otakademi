@@ -7,6 +7,7 @@ import { CopyButton } from "@/components/ui/CopyButton";
 import { Logo } from "@/components/site/Logo";
 import { SelfCheckIn } from "@/components/site/SelfCheckIn";
 import { getRegistrationByCode } from "@/server/services/registration.service";
+import { listActivePaymentMethods } from "@/server/services/payment-method.service";
 import { renderQrSvg, ticketPayload } from "@/server/services/ticket.service";
 import {
   REGISTRATION_STATUS_META,
@@ -47,6 +48,10 @@ export default async function TicketPage({
   const { event, participant, payment, ticket } = reg;
   const statusMeta = REGISTRATION_STATUS_META[reg.status as RegistrationStatusName];
   const format = EVENT_FORMAT_META[event.format as EventFormatName];
+
+  // Destination accounts to show only while a payment is still pending.
+  const payMethods =
+    payment?.status === "PENDING" ? await listActivePaymentMethods() : [];
 
   const isConfirmed = reg.status === "CONFIRMED" || reg.status === "ATTENDED";
   const awaitingPayment = reg.status === "WAITING_PAYMENT";
@@ -404,10 +409,28 @@ export default async function TicketPage({
                   menyertakan kode <strong>{reg.code}</strong>.
                 </p>
 
-                <div className="mt-3 rounded-lg bg-white p-3.5 text-sm">
-                  <p className="font-extrabold text-navy-900">BCA 1234567890</p>
-                  <p className="text-navy-500">a.n. Otakademi Indonesia</p>
-                </div>
+                {payMethods.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {payMethods.map((m) => (
+                      <div key={m.id} className="rounded-lg bg-white p-3.5 text-sm">
+                        <p className="font-extrabold text-navy-900">
+                          {m.provider}
+                          {m.accountNumber ? ` ${m.accountNumber}` : ""}
+                        </p>
+                        {m.accountName && (
+                          <p className="text-navy-500">a.n. {m.accountName}</p>
+                        )}
+                        {m.note && (
+                          <p className="mt-0.5 text-xs text-navy-400">{m.note}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-lg bg-white p-3.5 text-sm text-navy-500">
+                    Detail rekening akan diinformasikan oleh tim kami lewat WhatsApp.
+                  </div>
+                )}
 
                 <a
                   href={`https://wa.me/6281234567890?text=${encodeURIComponent(

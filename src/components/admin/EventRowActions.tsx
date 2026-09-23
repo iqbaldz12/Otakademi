@@ -77,19 +77,28 @@ export function EventRowActions({
       </Link>
 
       {/* Arsip video: terbitkan/sembunyikan rekaman untuk peserta yang sudah bayar */}
-      <span className="flex items-center gap-1.5" title="Arsip video rekaman">
-        <Icon name="monitor" size={15} className="text-navy-400" />
-        <span className="text-xs font-bold text-navy-500">Arsip</span>
-        <Switch
-          checked={recordingOpen}
-          disabled={!hasRecording}
-          disabledReason="Isi dulu link video arsip lewat menu Edit."
-          ariaLabel={`Terbitkan arsip video ${title}`}
-          messageOn="Arsip video terbit. Peserta yang sudah bayar bisa menonton."
-          messageOff="Arsip video disembunyikan."
-          onToggle={(next) => toggleRecordingAction(eventId, next)}
-        />
-      </span>
+      {hasRecording ? (
+        <span className="flex items-center gap-1.5" title="Arsip video rekaman">
+          <Icon name="monitor" size={15} className="text-navy-400" />
+          <span className="text-xs font-bold text-navy-500">Arsip</span>
+          <Switch
+            checked={recordingOpen}
+            ariaLabel={`Terbitkan arsip video ${title}`}
+            messageOn="Arsip video terbit. Peserta yang sudah bayar bisa menonton."
+            messageOff="Arsip video disembunyikan."
+            onToggle={(next) => toggleRecordingAction(eventId, next)}
+          />
+        </span>
+      ) : (
+        <Link
+          href={`/admin/event/${eventId}`}
+          className="btn btn-ghost btn-sm"
+          title="Isi link video arsip dulu di menu Edit untuk mengaktifkan arsip"
+        >
+          <Icon name="monitor" size={15} className="text-navy-300" />
+          <span className="text-navy-400">Arsip: perlu link</span>
+        </Link>
+      )}
 
       <Link href={`/admin/event/${eventId}`} className="btn btn-outline btn-sm">
         <Icon name="edit" size={15} />

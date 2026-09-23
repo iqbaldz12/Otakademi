@@ -5,7 +5,12 @@ import { Badge } from "@/components/ui/Badge";
 import { ActionButton } from "@/components/admin/ActionButton";
 import { confirmPaymentAction, expirePaymentsAction } from "@/server/actions/ops.actions";
 import { PaymentMethodEditor } from "@/components/admin/PaymentMethodEditor";
+import { PaymentMethodManager } from "@/components/admin/PaymentMethodManager";
 import { listPayments } from "@/server/services/payment.service";
+import {
+  listPaymentMethods,
+  methodLabel,
+} from "@/server/services/payment-method.service";
 import { db } from "@/server/db";
 import { PAYMENT_STATUS, PAYMENT_STATUS_META, type PaymentStatusName } from "@/lib/domain";
 import { formatIDR, fmtDateTimeShort, formatRelative } from "@/lib/format";
@@ -20,14 +25,18 @@ export default async function PembayaranPage({
 }) {
   const { status } = await searchParams;
 
-  const [payments, totals] = await Promise.all([
+  const [payments, totals, methods] = await Promise.all([
     listPayments({ status }),
     db.payment.groupBy({
       by: ["status"],
       _sum: { amount: true },
       _count: { _all: true },
     }),
+    listPaymentMethods(),
   ]);
+
+  // Quick-pick labels for the per-transaction method editor.
+  const methodPresets = methods.filter((m) => m.active).map(methodLabel);
 
   const paidTotal = totals.find((t) => t.status === "PAID");
   const pendingTotal = totals.find((t) => t.status === "PENDING");
@@ -80,6 +89,9 @@ export default async function PembayaranPage({
           <p className="text-[0.7rem] text-navy-400">Termasuk gagal & refund</p>
         </div>
       </div>
+
+      {/* Kelola metode pembayaran (dinamis, tidak hard-code) */}
+      <PaymentMethodManager methods={methods} />
 
       {/* Status filter */}
       <div className="flex flex-wrap items-center gap-1.5">
@@ -174,7 +186,11 @@ export default async function PembayaranPage({
                           {formatIDR(p.amount)}
                         </span>
                         <span className="mt-0.5 block">
-                          <PaymentMethodEditor paymentId={p.id} method={p.method} />
+                          <PaymentMethodEditor
+                            paymentId={p.id}
+                            method={p.method}
+                            presets={methodPresets}
+                          />
                         </span>
                       </td>
 

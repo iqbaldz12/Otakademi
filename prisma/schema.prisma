@@ -58,6 +58,14 @@ enum NotificationChannel {
   WHATSAPP
 }
 
+enum PaymentMethodType {
+  BANK
+  EWALLET
+  QRIS
+  CASH
+  OTHER
+}
+
 enum NotificationStatus {
   QUEUED
   SENT
@@ -177,6 +185,32 @@ model Payment {
   createdAt      DateTime      @default(now())
 
   registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+}
+
+/// Admin-managed payment method / destination account.
+///
+/// Replaces the old hard-coded "BCA 1234567890" block: the team adds their real
+/// bank accounts, e-wallets, QRIS, or cash instructions here, and both the admin
+/// transaction editor and the participant's payment instructions read from it.
+model PaymentMethod {
+  id            String            @id @default(cuid())
+  type          PaymentMethodType @default(BANK)
+  /// Bank/e-wallet name, e.g. "BCA", "DANA", or a QRIS label.
+  provider      String
+  /// Account/VA number or phone number. Optional for QRIS/CASH.
+  accountNumber String?
+  /// Account holder name, e.g. "Otakademi Indonesia".
+  accountName   String?
+  /// Extra instructions, e.g. "Cabang Bandung" or "Scan QR di bawah".
+  note          String?
+  /// Hidden from participants when false, but kept for later.
+  active        Boolean           @default(true)
+  /// Manual ordering; lower shows first.
+  sortOrder     Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([active, sortOrder])
 }
 
 model Ticket {

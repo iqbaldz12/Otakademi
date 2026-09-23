@@ -5,20 +5,21 @@ import { Icon } from "@/components/ui/Icon";
 import { toast } from "@/components/ui/toast";
 import { updatePaymentMethodAction } from "@/server/actions/ops.actions";
 
-const PRESETS = ["Transfer BCA", "Transfer Mandiri", "QRIS", "Tunai", "OVO", "GoPay"];
-
 /**
  * Inline editor for a payment's method label.
  *
  * Shows the current method as text with a pencil; clicking opens a small input
- * with quick-pick presets. Purely descriptive, so it never touches paid/unpaid.
+ * with quick-pick presets that come from the admin-managed list (not
+ * hard-coded). Purely descriptive, so it never touches paid/unpaid.
  */
 export function PaymentMethodEditor({
   paymentId,
   method,
+  presets,
 }: {
   paymentId: string;
   method: string | null;
+  presets: string[];
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(method ?? "");
@@ -91,7 +92,7 @@ export function PaymentMethodEditor({
         </button>
       </div>
       <div className="flex max-w-[12rem] flex-wrap justify-end gap-1">
-        {PRESETS.map((p) => (
+        {presets.map((p) => (
           <button
             key={p}
             type="button"
