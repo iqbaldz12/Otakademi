@@ -89,8 +89,18 @@ export default async function PendaftarPage({
         </a>
       </div>
 
-      {/* Filters: a GET form keeps state in the URL and needs no JS */}
-      <form action="/admin/pendaftar" method="get" className="card p-4">
+      {/*
+        Filters: a GET form keeps state in the URL and needs no JS.
+        The `key` is derived from the active filters so that navigating (e.g.
+        pressing Reset) remounts the form and its inputs pick up the new
+        defaultValues instead of keeping the previously typed text.
+      */}
+      <form
+        key={`${params.q ?? ""}|${params.eventId ?? ""}|${params.status ?? ""}|${params.paymentStatus ?? ""}`}
+        action="/admin/pendaftar"
+        method="get"
+        className="card p-4"
+      >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label htmlFor="q" className="label">
