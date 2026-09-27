@@ -571,8 +571,8 @@ export function EventForm({
             name="bannerImage"
             label="Foto / banner event"
             initial={initial.bannerImage}
-            aspect="16/9"
-            hint="Tampil di kartu event dan halaman detail. Kalau kosong, dipakai warna aksen di bawah."
+            aspect="1024/430"
+            hint="Ukuran ideal 1024x430 px (banner lebar). Tampil di kartu event dan halaman detail. Kalau kosong, dipakai warna aksen di bawah."
           />
 
           {/* Accent colour: fallback + small accents even when a banner exists */}

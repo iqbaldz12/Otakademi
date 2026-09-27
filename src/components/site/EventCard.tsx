@@ -40,7 +40,7 @@ export function EventCard({
     >
       {/* Banner image if uploaded; otherwise the colour accent bar. */}
       {event.bannerImage ? (
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-navy-100">
+        <div className="relative aspect-[1024/430] w-full overflow-hidden bg-navy-100">
           <Image
             src={event.bannerImage}
             alt=""
