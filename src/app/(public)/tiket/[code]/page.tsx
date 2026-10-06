@@ -219,17 +219,20 @@ export default async function TicketPage({
                   </code>
                   <CopyButton value={reg.code} label="Salin kode" className="no-print" />
                 </div>
-                <p className="mt-2 flex items-start gap-1.5 text-xs text-navy-500">
-                  <Icon name="info" size={13} className="mt-px shrink-0 text-navy-400" />
-                  Simpan kode ini. Kalau link tiket hilang, buka{" "}
-                  <Link
-                    href="/cek-tiket"
-                    className="font-semibold text-navy-700 underline decoration-navy-300 underline-offset-2"
-                  >
-                    /cek-tiket
-                  </Link>{" "}
-                  dan masukkan kode ini untuk membuka tiket lagi.
-                </p>
+                <div className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-navy-500">
+                  <Icon name="info" size={13} className="mt-0.5 shrink-0 text-navy-400" />
+                  <span>
+                    Simpan kode ini. Kalau link tiket hilang, kode juga dikirim ke
+                    email kamu. Buka halaman{" "}
+                    <Link
+                      href="/cek-tiket"
+                      className="whitespace-nowrap font-semibold text-navy-700 underline decoration-navy-300 underline-offset-2"
+                    >
+                      Cek Tiket
+                    </Link>{" "}
+                    lalu masukkan kode ini untuk membuka tiketnya lagi.
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -239,7 +242,7 @@ export default async function TicketPage({
               - Online: the meeting link (text + copy) plus the WhatsApp group.
               Sensitive links only appear once the registration is confirmed.
             */}
-            <div className="flex flex-col justify-start gap-3 md:w-56">
+            <div className="flex flex-col justify-start gap-3 md:w-64">
               {isOnline ? (
                 <>
                   {/* Meeting link */}
@@ -249,12 +252,12 @@ export default async function TicketPage({
                         <Icon name="monitor" size={14} />
                         Link Kelas Online
                       </span>
-                      <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-white p-1.5 pl-2.5">
+                      <div className="mt-2 flex items-start gap-2 rounded-lg border border-emerald-200 bg-white p-1.5 pl-2.5">
                         <a
                           href={meetingLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="min-w-0 flex-1 truncate text-sm font-semibold text-navy-800 underline decoration-emerald-400 underline-offset-2 hover:text-emerald-700"
+                          className="min-w-0 flex-1 break-all text-sm font-semibold leading-snug text-navy-800 underline decoration-emerald-400 underline-offset-2 hover:text-emerald-700"
                         >
                           {meetingLink}
                         </a>
@@ -262,7 +265,7 @@ export default async function TicketPage({
                           value={meetingLink}
                           label="Salin link"
                           iconOnly
-                          className="no-print border-emerald-200"
+                          className="no-print shrink-0 border-emerald-200"
                         />
                       </div>
                     </div>
@@ -287,10 +290,10 @@ export default async function TicketPage({
                       href={event.whatsappLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn btn-primary btn-sm w-full no-print"
+                      className="btn btn-primary btn-sm w-full whitespace-normal py-2 text-center leading-tight no-print"
                     >
                       <Icon name="whatsapp" size={16} />
-                      Gabung Grup WhatsApp
+                      Konfirmasi ke WhatsApp
                     </a>
                   )}
                 </>
@@ -310,10 +313,10 @@ export default async function TicketPage({
                       href={event.whatsappLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn btn-primary btn-sm mt-3 w-40 no-print"
+                      className="btn btn-primary btn-sm mt-3 w-44 whitespace-normal py-2 text-center leading-tight no-print"
                     >
                       <Icon name="whatsapp" size={16} />
-                      Grup WhatsApp
+                      Gabung Grup WhatsApp
                     </a>
                   )}
                 </div>

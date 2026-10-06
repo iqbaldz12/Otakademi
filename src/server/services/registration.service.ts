@@ -3,13 +3,14 @@ import { registrationCode, ticketToken } from "@/lib/ids";
 import { applyPromo } from "@/lib/domain";
 import { SEAT_HOLDING_STATUS } from "@/server/services/event.service";
 import { findUsablePromo } from "@/server/services/promo.service";
-import { queueNotification } from "@/server/services/notification.service";
+import { queueNotification, sendTicketEmail } from "@/server/services/notification.service";
 import type { RegistrationInput } from "@/lib/validate";
 import type { Prisma, RegistrationStatus } from "@prisma/client";
 
 export type RegisterOutcome =
   | {
       ok: true;
+      registrationId: string;
       code: string;
       status: RegistrationStatus;
       amountDue: number;
@@ -34,7 +35,7 @@ export async function registerForEvent(
   input: RegistrationInput,
 ): Promise<RegisterOutcome> {
   try {
-    return await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       // 1. Lock the event row for the duration of this transaction.
       const locked = await tx.$queryRaw<
         Array<{
@@ -205,8 +206,22 @@ export async function registerForEvent(
         tx,
       );
 
-      return { ok: true as const, code, status, amountDue, discount };
+      return {
+        ok: true as const,
+        registrationId: registration.id,
+        code,
+        status,
+        amountDue,
+        discount,
+      };
     });
+
+    // After commit: free events are CONFIRMED immediately, so email the ticket.
+    if (result.ok && result.status === "CONFIRMED") {
+      await sendTicketEmail(result.registrationId);
+    }
+
+    return result;
   } catch (err) {
     // Unique-constraint collision on the registration code is the only
     // realistic race left; both are safe for the caller to retry.
@@ -311,6 +326,67 @@ export async function updateRegistrationStatus(
       });
     }
   });
+
+  // After commit: email the ticket if this move confirmed the registration.
+  if (status === "CONFIRMED" || status === "ATTENDED") {
+    await sendTicketEmail(id);
+  }
+}
+
+/**
+ * Permanently deletes a CANCELLED registration (and its payment, ticket, and
+ * attendance via cascade). Only cancelled rows can be deleted, so an active
+ * attendee is never removed by accident. After deletion the waitlist is
+ * promoted in case a seat opened up.
+ *
+ * Returns false (without deleting) if the registration is missing or not
+ * cancelled.
+ */
+export async function deleteRegistration(
+  id: string,
+): Promise<{ ok: boolean; reason?: string }> {
+  const reg = await db.registration.findUnique({
+    where: { id },
+    select: { status: true, eventId: true },
+  });
+
+  if (!reg) return { ok: false, reason: "Pendaftaran tidak ditemukan." };
+  if (reg.status !== "CANCELLED") {
+    return {
+      ok: false,
+      reason: "Hanya pendaftaran berstatus Batal yang bisa dihapus.",
+    };
+  }
+
+  await db.registration.delete({ where: { id } });
+  await promoteFromWaitlist(reg.eventId);
+  return { ok: true };
+}
+
+/**
+ * Bulk-deletes every CANCELLED registration, optionally scoped to one event.
+ * Promotes the waitlist for affected events afterwards. Returns how many were
+ * removed.
+ */
+export async function deleteCancelledRegistrations(
+  eventId?: string,
+): Promise<number> {
+  const where = { status: "CANCELLED" as RegistrationStatus, ...(eventId ? { eventId } : {}) };
+
+  // Capture affected events first so we can refill their freed seats.
+  const affected = await db.registration.findMany({
+    where,
+    select: { eventId: true },
+    distinct: ["eventId"],
+  });
+
+  const result = await db.registration.deleteMany({ where });
+
+  for (const { eventId: evId } of affected) {
+    await promoteFromWaitlist(evId);
+  }
+
+  return result.count;
 }
 
 /** Bulk status change from the admin table. */
@@ -319,6 +395,16 @@ export async function bulkUpdateStatus(
   status: RegistrationStatus,
 ): Promise<number> {
   if (ids.length === 0) return 0;
+
+  // Confirming in bulk must also issue tickets + email, so route each one
+  // through the single-item path that handles both.
+  if (status === "CONFIRMED" || status === "ATTENDED") {
+    for (const id of ids) {
+      await updateRegistrationStatus(id, status);
+    }
+    return ids.length;
+  }
+
   const result = await db.registration.updateMany({
     where: { id: { in: ids } },
     data: { status },
@@ -331,7 +417,9 @@ export async function bulkUpdateStatus(
  * opened up. Called after cancellations or payment expiry.
  */
 export async function promoteFromWaitlist(eventId: string): Promise<number> {
-  return db.$transaction(async (tx) => {
+  const confirmedIds: string[] = [];
+
+  const promoted = await db.$transaction(async (tx) => {
     const locked = await tx.$queryRaw<
       Array<{ capacity: number; price: number }>
     >`SELECT capacity, price FROM "Event" WHERE id = ${eventId} FOR UPDATE`;
@@ -382,6 +470,7 @@ export async function promoteFromWaitlist(eventId: string): Promise<number> {
           create: { registrationId: reg.id, token: ticketToken() },
           update: {},
         });
+        confirmedIds.push(reg.id);
       }
     }
 
@@ -395,6 +484,13 @@ export async function promoteFromWaitlist(eventId: string): Promise<number> {
 
     return waiting.length;
   });
+
+  // After commit: email tickets to anyone promoted straight to confirmed.
+  for (const id of confirmedIds) {
+    await sendTicketEmail(id);
+  }
+
+  return promoted;
 }
 
 /** CSV export. Quotes every field so commas in names can't break columns. */

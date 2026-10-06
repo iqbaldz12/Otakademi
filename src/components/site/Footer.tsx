@@ -105,12 +105,12 @@ export async function Footer() {
           <p className="text-xs text-navy-400">
             &copy; {new Date().getFullYear()} Otakademi. Learn &middot; Think &middot; Try. Powered by <a target="_blank" href="https://someah.id">Someah</a>
           </p>
-          <Link
+          {/* <Link
             href="/admin"
             className="text-xs font-semibold text-navy-400 transition-colors hover:text-navy-700"
           >
             Masuk Dashboard Tim
-          </Link>
+          </Link> */}
         </div>
       </div>
     </footer>

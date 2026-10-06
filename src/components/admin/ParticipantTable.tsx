@@ -5,9 +5,12 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { toast } from "@/components/ui/toast";
+import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import {
   setRegistrationStatusAction,
   bulkStatusAction,
+  deleteRegistrationAction,
+  clearCancelledAction,
 } from "@/server/actions/registration.actions";
 import {
   REGISTRATION_STATUS_META,
@@ -81,6 +84,16 @@ export function ParticipantTable({ rows }: { rows: ParticipantRow[] }) {
     });
   }
 
+  // How many cancelled rows are currently shown — drives the cleanup button.
+  const cancelledCount = rows.filter((r) => r.status === "CANCELLED").length;
+
+  function clearCancelled() {
+    startTransition(async () => {
+      const result = await clearCancelledAction();
+      toast(result.reason ?? "Selesai.", result.ok ? "success" : "error");
+    });
+  }
+
   if (rows.length === 0) {
     return (
       <div className="card flex flex-col items-center gap-3 p-14 text-center">
@@ -128,6 +141,24 @@ export function ParticipantTable({ rows }: { rows: ParticipantRow[] }) {
               Batal pilih
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Cleanup bar for cancelled rows (hidden while selecting in bulk) */}
+      {selected.size === 0 && cancelledCount > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-coral-200 bg-coral-50 p-3">
+          <Icon name="trash" size={15} className="text-coral-600" />
+          <span className="text-sm font-semibold text-coral-800">
+            Ada {cancelledCount} pendaftaran berstatus Batal.
+          </span>
+          <button
+            type="button"
+            onClick={clearCancelled}
+            disabled={isPending}
+            className="ml-auto rounded-lg border border-coral-300 bg-white px-3 py-1.5 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-100 disabled:opacity-50"
+          >
+            Bersihkan Semua yang Batal
+          </button>
         </div>
       )}
 
@@ -257,21 +288,33 @@ export function ParticipantTable({ rows }: { rows: ParticipantRow[] }) {
                       <label className="sr-only-x" htmlFor={`status-${row.id}`}>
                         Ubah status {row.participant.name}
                       </label>
-                      <select
-                        id={`status-${row.id}`}
-                        value={row.status}
-                        disabled={isPending}
-                        onChange={(e) =>
-                          changeStatus(row.id, e.target.value as RegistrationStatus)
-                        }
-                        className="field field-select py-1.5 text-xs"
-                      >
-                        {REGISTRATION_STATUS.map((s) => (
-                          <option key={s} value={s}>
-                            {REGISTRATION_STATUS_META[s].label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <select
+                          id={`status-${row.id}`}
+                          value={row.status}
+                          disabled={isPending}
+                          onChange={(e) =>
+                            changeStatus(row.id, e.target.value as RegistrationStatus)
+                          }
+                          className="field field-select py-1.5 text-xs"
+                        >
+                          {REGISTRATION_STATUS.map((s) => (
+                            <option key={s} value={s}>
+                              {REGISTRATION_STATUS_META[s].label}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Permanent delete, only for cancelled registrations. */}
+                        {row.status === "CANCELLED" && (
+                          <ConfirmButton
+                            action={() => deleteRegistrationAction(row.id)}
+                            confirmLabel="Hapus permanen?"
+                            successMessage={`Pendaftaran ${row.code} dihapus.`}
+                            ariaLabel={`Hapus pendaftaran ${row.participant.name}`}
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

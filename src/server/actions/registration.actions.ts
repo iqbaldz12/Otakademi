@@ -9,6 +9,8 @@ import {
   updateRegistrationStatus,
   bulkUpdateStatus,
   promoteFromWaitlist,
+  deleteRegistration,
+  deleteCancelledRegistrations,
 } from "@/server/services/registration.service";
 import { checkPromo } from "@/server/services/promo.service";
 import type { RegistrationStatus } from "@prisma/client";
@@ -97,6 +99,38 @@ export async function bulkStatusAction(
   revalidatePath("/admin/pendaftar");
   revalidatePath("/admin");
   return { ok: true, reason: `${count} peserta diperbarui.` };
+}
+
+/** Permanently removes a cancelled registration (admin cleanup). */
+export async function deleteRegistrationAction(
+  id: string,
+): Promise<{ ok: boolean; reason?: string }> {
+  const session = await requireAdmin();
+
+  const result = await deleteRegistration(id);
+  if (!result.ok) return result;
+
+  await audit(session.email, "registration.delete", id);
+  revalidatePath("/admin/pendaftar");
+  revalidatePath("/admin");
+  return { ok: true, reason: "Pendaftaran dihapus permanen." };
+}
+
+/** Clears every cancelled registration at once (optional per-event cleanup). */
+export async function clearCancelledAction(
+  eventId?: string,
+): Promise<{ ok: boolean; reason?: string }> {
+  const session = await requireAdmin();
+
+  const count = await deleteCancelledRegistrations(eventId);
+  await audit(session.email, "registration.clearCancelled", eventId, `${count} dihapus`);
+
+  revalidatePath("/admin/pendaftar");
+  revalidatePath("/admin");
+
+  return count > 0
+    ? { ok: true, reason: `${count} pendaftaran batal dihapus.` }
+    : { ok: false, reason: "Tidak ada pendaftaran batal untuk dihapus." };
 }
 
 export async function promoteWaitlistAction(

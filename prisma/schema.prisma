@@ -219,6 +219,9 @@ model Ticket {
   token          String    @unique
   issuedAt       DateTime  @default(now())
   checkInAt      DateTime?
+  /// Set once the ticket email has been sent, so we never email the same
+  /// confirmation twice (page reloads, repeated status flips, webhook retries).
+  emailSentAt    DateTime?
 
   registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 }

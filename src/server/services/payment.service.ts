@@ -1,6 +1,6 @@
 import { db } from "@/server/db";
 import { ticketToken } from "@/lib/ids";
-import { queueNotification } from "@/server/services/notification.service";
+import { queueNotification, sendTicketEmail } from "@/server/services/notification.service";
 import { promoteFromWaitlist } from "@/server/services/registration.service";
 import type { PaymentStatus } from "@prisma/client";
 
@@ -17,7 +17,9 @@ export async function markPaid(input: {
   method?: string;
   providerRef?: string;
 }): Promise<{ ok: true; alreadyPaid: boolean } | { ok: false; reason: string }> {
-  return db.$transaction(async (tx) => {
+  let confirmedRegistrationId: string | null = null;
+
+  const outcome = await db.$transaction(async (tx) => {
     const payment = input.paymentId
       ? await tx.payment.findUnique({
           where: { id: input.paymentId },
@@ -74,14 +76,24 @@ export async function markPaid(input: {
       );
     }
 
+    confirmedRegistrationId = payment.registrationId;
     return { ok: true as const, alreadyPaid: false };
   });
+
+  // After commit: email the ticket now that payment confirmed the registration.
+  if (confirmedRegistrationId) {
+    await sendTicketEmail(confirmedRegistrationId);
+  }
+
+  return outcome;
 }
 
 export async function setPaymentStatus(
   paymentId: string,
   status: PaymentStatus,
 ): Promise<void> {
+  let confirmedRegistrationId: string | null = null;
+
   await db.$transaction(async (tx) => {
     const payment = await tx.payment.update({
       where: { id: paymentId },
@@ -103,6 +115,7 @@ export async function setPaymentStatus(
         create: { registrationId: payment.registrationId, token: ticketToken() },
         update: {},
       });
+      confirmedRegistrationId = payment.registrationId;
     }
 
     if (status === "EXPIRED" || status === "FAILED" || status === "REFUNDED") {
@@ -112,6 +125,10 @@ export async function setPaymentStatus(
       });
     }
   });
+
+  if (confirmedRegistrationId) {
+    await sendTicketEmail(confirmedRegistrationId);
+  }
 }
 
 /**
