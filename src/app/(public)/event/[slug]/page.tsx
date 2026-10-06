@@ -394,18 +394,18 @@ export default async function EventDetailPage({
                       <dt className="text-navy-500">Lokasi</dt>
                       <dd className="text-right font-bold text-navy-900">{location}</dd>
                     </div>
-                    {!seats.isUnlimited && (
+                    {/* {!seats.isUnlimited && (
                       <div className="flex justify-between gap-3">
                         <dt className="text-navy-500">Kuota</dt>
                         <dd className="text-right font-bold text-navy-900 tnum">
                           {seats.capacity} peserta
                         </dd>
                       </div>
-                    )}
+                    )} */}
                   </dl>
 
                   {/* Capacity meter */}
-                  {!seats.isUnlimited && !registrationClosed && (
+                  {/* {!seats.isUnlimited && !registrationClosed && (
                     <div className="mt-4">
                       <div
                         className="h-2 overflow-hidden rounded-full bg-navy-100"
@@ -434,7 +434,7 @@ export default async function EventDetailPage({
                           : `Sisa ${seats.remaining} dari ${seats.capacity} kursi`}
                       </p>
                     </div>
-                  )}
+                  )} */}
 
                   {/* Price */}
                   <div className="mt-5 border-t border-navy-100 pt-4">
