@@ -85,6 +85,69 @@ export async function saveImage(file: File): Promise<UploadResult> {
   return { ok: true, path: `${PUBLIC_PREFIX}/${name}` };
 }
 
+/** Certificate templates may be high-res images or a PDF, so allow more. */
+const CERT_ALLOWED = new Map<string, string>([
+  ["image/png", "png"],
+  ["image/jpeg", "jpg"],
+  ["application/pdf", "pdf"],
+]);
+
+const CERT_SIGNATURES: Array<{ ext: string; bytes: number[] }> = [
+  { ext: "png", bytes: [0x89, 0x50, 0x4e, 0x47] },
+  { ext: "jpg", bytes: [0xff, 0xd8, 0xff] },
+  { ext: "pdf", bytes: [0x25, 0x50, 0x44, 0x46] }, // "%PDF"
+];
+
+const CERT_MAX_BYTES = 15 * 1024 * 1024; // 15 MB for high-res templates
+
+/**
+ * Stores a certificate template (high-res PNG/JPG or PDF).
+ *
+ * Separate from {@link saveImage} so the stricter 4 MB / image-only rules there
+ * stay intact; templates have their own allow-list, signature check, and size
+ * cap, and land in /uploads so Next serves them directly.
+ */
+export async function saveCertificateTemplate(file: File): Promise<UploadResult> {
+  if (!file || file.size === 0) {
+    return { ok: false, reason: "Tidak ada file yang diunggah." };
+  }
+  if (file.size > CERT_MAX_BYTES) {
+    return { ok: false, reason: "Ukuran template maksimal 15 MB." };
+  }
+
+  const ext = CERT_ALLOWED.get(file.type);
+  if (!ext) {
+    return { ok: false, reason: "Format template harus PNG, JPG, atau PDF." };
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const sigOk = CERT_SIGNATURES.some(
+    (sig) => sig.ext === ext && sig.bytes.every((b, i) => buffer[i] === b),
+  );
+  if (!sigOk) {
+    return { ok: false, reason: "Berkas ini bukan template yang valid." };
+  }
+
+  const name = `cert-${Date.now().toString(36)}-${randomBytes(8).toString("hex")}.${ext}`;
+  await mkdir(UPLOAD_DIR, { recursive: true });
+  await writeFile(join(UPLOAD_DIR, name), buffer);
+
+  return { ok: true, path: `${PUBLIC_PREFIX}/${name}` };
+}
+
+/** Reads an uploaded file (e.g. a certificate template) back as a Buffer. */
+export async function readUpload(publicPath: string): Promise<Buffer | null> {
+  if (!publicPath.startsWith(`${PUBLIC_PREFIX}/`)) return null;
+  const filename = publicPath.slice(PUBLIC_PREFIX.length + 1);
+  if (filename.includes("/") || filename.includes("..") || !filename) return null;
+  try {
+    const { readFile } = await import("node:fs/promises");
+    return await readFile(join(UPLOAD_DIR, filename));
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Deletes a previously uploaded file when a record stops referencing it.
  *

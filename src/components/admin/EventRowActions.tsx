@@ -76,6 +76,15 @@ export function EventRowActions({
         Absen
       </Link>
 
+      <Link
+        href={`/admin/event/${eventId}/sertifikat`}
+        className="btn btn-ghost btn-sm"
+        title={`Sertifikat ${title}`}
+      >
+        <Icon name="mail" size={15} />
+        Sertifikat
+      </Link>
+
       {/* Arsip video: terbitkan/sembunyikan rekaman untuk peserta yang sudah bayar */}
       {hasRecording ? (
         <span className="flex items-center gap-1.5" title="Arsip video rekaman">

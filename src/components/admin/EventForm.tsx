@@ -69,6 +69,7 @@ export type EventFormValues = {
   endAt: Date;
   capacity: number;
   price: number;
+  showSeats: boolean;
   status: string;
   mentorName: string;
   mentorTitle: string;
@@ -406,6 +407,25 @@ export function EventForm({
                   : `Tampil sebagai ${formatIDR(priceNum)}. Peserta masuk alur pembayaran.`}
               </p>
             )}
+          </div>
+
+          {/* Toggle: tampilkan/sembunyikan indikator sisa kursi ke publik */}
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2.5 rounded-xl border border-navy-200 p-3.5">
+              <input
+                type="checkbox"
+                name="showSeats"
+                defaultChecked={initial.showSeats}
+                className="size-4 accent-gold-500"
+              />
+              <span className="text-sm font-semibold text-navy-700">
+                Tampilkan indikator sisa kursi ke publik
+              </span>
+            </label>
+            <p className="hint">
+              Kalau dimatikan, bar dan teks &quot;sisa kursi&quot; disembunyikan di
+              halaman publik. Logika kuota (penuh =&gt; waitlist) tetap berjalan.
+            </p>
           </div>
         </div>
       </section>

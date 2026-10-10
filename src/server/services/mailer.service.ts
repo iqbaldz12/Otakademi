@@ -14,12 +14,19 @@ import nodemailer, { type Transporter } from "nodemailer";
  *   MAIL_FROM="Otakademi <youraddress@gmail.com>"
  */
 
+export type MailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+};
+
 export type MailMessage = {
   to: string;
   subject: string;
   text: string;
   html?: string;
   replyTo?: string;
+  attachments?: MailAttachment[];
 };
 
 export type MailResult = { ok: boolean; transport: string; error?: string };
@@ -62,10 +69,13 @@ export async function sendMail(msg: MailMessage): Promise<MailResult> {
 
   // No SMTP configured -> log the message instead of silently dropping it.
   if (!transport) {
+    const att = msg.attachments?.length
+      ? ` attachments=${msg.attachments.map((a) => a.filename).join(",")}`
+      : "";
     console.info(
       `[mail:log] (SMTP belum dikonfigurasi) to=${msg.to} subject=${JSON.stringify(
         msg.subject,
-      )}\n${msg.text}`,
+      )}${att}\n${msg.text}`,
     );
     return { ok: true, transport: "log" };
   }
@@ -78,6 +88,11 @@ export async function sendMail(msg: MailMessage): Promise<MailResult> {
       subject: msg.subject,
       text: msg.text,
       html: msg.html,
+      attachments: msg.attachments?.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      })),
       // Legitimate-sender signals that help keep the message out of spam.
       headers: {
         "List-Unsubscribe": `<mailto:${process.env.SMTP_USER ?? "no-reply@otakademi.id"}?subject=unsubscribe>`,

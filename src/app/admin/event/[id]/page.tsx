@@ -126,6 +126,7 @@ export default async function EditEventPage({
           endAt: event.endAt,
           capacity: event.capacity,
           price: event.price,
+          showSeats: event.showSeats,
           status: event.status,
           mentorName: event.mentorName ?? "",
           mentorTitle: event.mentorTitle ?? "",

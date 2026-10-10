@@ -27,6 +27,8 @@ export function EventCard({
   const { seats } = event;
   const isFree = event.price === 0;
   const format = EVENT_FORMAT_META[event.format as EventFormatName];
+  // Admin can hide the seat indicator per event; quota logic still runs.
+  const showSeats = event.showSeats;
   // CLOSED events never reach the public site, so "finished" is the only
   // read-only state a visitor can encounter here.
   const closed = event.status === "COMPLETED";
@@ -67,12 +69,12 @@ export function EventCard({
           <Badge tone="navy">{event.category}</Badge>
           {soldOut && <Badge tone="coral">Kuota Penuh</Badge>}
           {closed && <Badge tone="grey">Selesai</Badge>}
-          {!soldOut && !closed && seats.scarcity === "critical" && (
+          {showSeats && !soldOut && !closed && seats.scarcity === "critical" && (
             <Badge tone="coral" dot>
               Sisa {seats.remaining} kursi
             </Badge>
           )}
-          {!soldOut && !closed && seats.scarcity === "low" && (
+          {showSeats && !soldOut && !closed && seats.scarcity === "low" && (
             <Badge tone="gold" dot>
               Hampir penuh
             </Badge>
@@ -128,7 +130,7 @@ export function EventCard({
         </dl>
 
         {/* Capacity meter, only when it carries information */}
-        {!seats.isUnlimited && !closed && (
+        {showSeats && !seats.isUnlimited && !closed && (
           <div className="mt-4">
             <div
               className="h-1.5 overflow-hidden rounded-full bg-navy-100"

@@ -43,6 +43,7 @@ export default function NewEventPage() {
           endAt: end,
           capacity: 50,
           price: 0,
+          showSeats: true,
           status: "DRAFT",
           mentorName: "",
           mentorTitle: "",

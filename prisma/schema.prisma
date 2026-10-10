@@ -98,6 +98,9 @@ model Event {
   endAt       DateTime
   capacity    Int         @default(0) // 0 = unlimited
   price       Int         @default(0) // IDR; 0 = free
+  /// When false, the public "sisa kursi" bar/text is hidden for this event.
+  /// Quota logic (full -> waitlist) still runs regardless.
+  showSeats   Boolean     @default(true)
   status      EventStatus @default(DRAFT)
   /// Uploaded banner path (e.g. /uploads/xxx.webp). Falls back to bannerColor.
   bannerImage String?
@@ -121,6 +124,29 @@ model Event {
   /// Admin-controlled switch for the video archive. When false the archive is
   /// hidden even if recordingUrl is set.
   recordingOpen Boolean @default(false)
+
+  // ---- Certificate ----
+  /// Uploaded blank certificate template path (e.g. /uploads/certs/xxx.png|pdf).
+  certificateTemplate String?
+  /// Text overlay layout, as fractions of the template size (0..1) so it scales
+  /// to any resolution. x = horizontal center of the name line.
+  certNameX     Float  @default(0.5)
+  certNameY     Float  @default(0.5)
+  /// Name font size as a fraction of template height (e.g. 0.06 = 6%).
+  certNameSize  Float  @default(0.06)
+  /// Hex colour for the name text.
+  certNameColor String @default("#1A2C4E")
+  /// Optional second line (event date) placement; hidden when certDateShow=false.
+  certDateShow  Boolean @default(false)
+  certDateX     Float   @default(0.5)
+  certDateY     Float   @default(0.62)
+  certDateSize  Float   @default(0.028)
+  /// Optional certificate-number placement; hidden when certNumberShow=false.
+  certNumberShow Boolean @default(false)
+  certNumberX    Float   @default(0.5)
+  certNumberY    Float   @default(0.9)
+  certNumberSize Float   @default(0.02)
+
   summary     String?
   description String?
   outcomes    String[]    @default([]) // "what you get" bullets
@@ -160,6 +186,10 @@ model Registration {
   referral      String?
   promoCode     String?
   answers       Json?
+  /// Human-readable certificate number, assigned when first generated.
+  certificateNumber String?
+  /// Set once the certificate email has been sent (anti double-send + history).
+  certificateSentAt DateTime?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 

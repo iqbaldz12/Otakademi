@@ -153,6 +153,7 @@ export type EventInput = {
   endAt: Date;
   capacity: number;
   price: number;
+  showSeats: boolean;
   mentorName?: string;
   mentorTitle?: string;
   mentorPhoto?: string;
@@ -324,6 +325,10 @@ export function validateEvent(form: FormData): ValidationResult<EventInput> {
     errors.price = "Harga harus angka bulat 0 atau lebih (0 = gratis).";
   }
 
+  // Seat indicator visibility (checkbox).
+  const showSeats =
+    form.get("showSeats") === "on" || form.get("showSeats") === "true";
+
   // Format-specific requirements
   if (formatRaw === "OFFLINE" && !venue) {
     errors.venue = "Event offline butuh lokasi.";
@@ -352,6 +357,7 @@ export function validateEvent(form: FormData): ValidationResult<EventInput> {
       endAt,
       capacity,
       price,
+      showSeats,
       mentorName,
       mentorTitle,
       mentorPhoto,

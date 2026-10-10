@@ -82,6 +82,8 @@ export default async function EventDetailPage({
   const { seats } = event;
   const format = EVENT_FORMAT_META[event.format as EventFormatName];
   const isFree = event.price === 0;
+  // Admin can hide the seat indicator per event; quota logic still runs.
+  const showSeats = event.showSeats;
   const days = daysUntil(event.startAt);
   const isPast = event.startAt < new Date();
 
@@ -155,13 +157,18 @@ export default async function EventDetailPage({
       label: "Format",
       value: `${format.label}${event.venue ? ` - ${event.venue}` : ""}`,
     },
-    {
-      icon: "users",
-      label: "Kuota",
-      value: seats.isUnlimited
-        ? "Tanpa batas"
-        : `${seats.capacity} peserta (${seats.taken} terisi)`,
-    },
+    // Kuota card only shown when the admin keeps the seat indicator visible.
+    ...(showSeats
+      ? [
+          {
+            icon: "users" as IconName,
+            label: "Kuota",
+            value: seats.isUnlimited
+              ? "Tanpa batas"
+              : `${seats.capacity} peserta (${seats.taken} terisi)`,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -394,18 +401,18 @@ export default async function EventDetailPage({
                       <dt className="text-navy-500">Lokasi</dt>
                       <dd className="text-right font-bold text-navy-900">{location}</dd>
                     </div>
-                    {/* {!seats.isUnlimited && (
+                     {showSeats && !seats.isUnlimited && (
                       <div className="flex justify-between gap-3">
                         <dt className="text-navy-500">Kuota</dt>
                         <dd className="text-right font-bold text-navy-900 tnum">
                           {seats.capacity} peserta
                         </dd>
                       </div>
-                    )} */}
+                    )}
                   </dl>
 
-                  {/* Capacity meter */}
-                  {/* {!seats.isUnlimited && !registrationClosed && (
+                  {/* Capacity meter (hidden when admin turns off the indicator) */}
+                  {showSeats && !seats.isUnlimited && !registrationClosed && (
                     <div className="mt-4">
                       <div
                         className="h-2 overflow-hidden rounded-full bg-navy-100"
@@ -434,7 +441,8 @@ export default async function EventDetailPage({
                           : `Sisa ${seats.remaining} dari ${seats.capacity} kursi`}
                       </p>
                     </div>
-                  )} */}
+                  )}
+
 
                   {/* Price */}
                   <div className="mt-5 border-t border-navy-100 pt-4">
