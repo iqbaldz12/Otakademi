@@ -71,6 +71,18 @@ export default async function TicketPage({
   // participant, and only when the admin has actually set it on the event.
   const meetingLink = isOnline && isConfirmed ? event.meetingLink : null;
 
+  // "Konfirmasi ke WhatsApp": opens the admin's WhatsApp with a ready-to-send
+  // confirmation message (participant name + event + code). The admin then
+  // continues the conversation from there.
+  const adminWa = (process.env.ADMIN_WHATSAPP ?? "6281234567890")
+    .replace(/[^\d]/g, "")
+    .replace(/^0/, "62");
+  const waConfirmMessage =
+    `Halo Admin Otakademi, saya ${participant.name} sudah terdaftar di event ` +
+    `"${event.title}" dengan kode pendaftaran ${reg.code}. ` +
+    `Saya ingin konfirmasi pendataran. Terima kasih.`;
+  const waConfirmUrl = `https://wa.me/${adminWa}?text=${encodeURIComponent(waConfirmMessage)}`;
+
   // Self check-in: confirmed participants can mark their own attendance only
   // while the admin has opened attendance for the event (like a webinar room
   // opened manually by the host). Once someone is already present, they keep
@@ -284,16 +296,16 @@ export default async function TicketPage({
                     </div>
                   )}
 
-                  {/* WhatsApp group, same card */}
-                  {isConfirmed && event.whatsappLink && (
+                  {/* Konfirmasi ke WhatsApp admin (pesan sudah terisi otomatis) */}
+                  {isConfirmed && (
                     <a
-                      href={event.whatsappLink}
+                      href={waConfirmUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-primary btn-sm w-full whitespace-normal py-2 text-center leading-tight no-print"
                     >
                       <Icon name="whatsapp" size={16} />
-                      Konfirmasi ke WhatsApp
+                      Konfirmasi ke WhatsApp Admin
                     </a>
                   )}
                 </>
@@ -308,15 +320,15 @@ export default async function TicketPage({
                   <p className="mt-2 text-center text-[0.7rem] font-semibold text-navy-400">
                     Tunjukkan saat check-in
                   </p>
-                  {isConfirmed && event.whatsappLink && (
+                  {isConfirmed && (
                     <a
-                      href={event.whatsappLink}
+                      href={waConfirmUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-primary btn-sm mt-3 w-44 whitespace-normal py-2 text-center leading-tight no-print"
                     >
                       <Icon name="whatsapp" size={16} />
-                      Gabung Grup WhatsApp
+                      Konfirmasi ke WhatsApp Admin
                     </a>
                   )}
                 </div>
