@@ -71,17 +71,45 @@ export default async function TicketPage({
   // participant, and only when the admin has actually set it on the event.
   const meetingLink = isOnline && isConfirmed ? event.meetingLink : null;
 
-  // "Konfirmasi ke WhatsApp": opens the admin's WhatsApp with a ready-to-send
-  // confirmation message (participant name + event + code). The admin then
-  // continues the conversation from there.
-  const adminWa = (process.env.ADMIN_WHATSAPP ?? "6281234567890")
-    .replace(/[^\d]/g, "")
-    .replace(/^0/, "62");
+  // "Konfirmasi ke WhatsApp": opens WhatsApp with a ready-to-send confirmation
+  // message (participant name + event + code). The admin then continues from
+  // there.
+  //
+  // Number priority:
+  //   1. The event's own WhatsApp contact (field "Link grup / kontak WhatsApp")
+  //      when it's a wa.me/<number> link,
+  //   2. otherwise the global ADMIN_WHATSAPP from env.
+  // A group invite link (chat.whatsapp.com) can't carry a personal message, so
+  // if that's what the admin set, we just open it (no prefilled text).
   const waConfirmMessage =
     `Halo Admin Otakademi, saya ${participant.name} sudah terdaftar di event ` +
     `"${event.title}" dengan kode pendaftaran ${reg.code}. ` +
-    `Saya ingin konfirmasi pendataran. Terima kasih.`;
-  const waConfirmUrl = `https://wa.me/${adminWa}?text=${encodeURIComponent(waConfirmMessage)}`;
+    `Saya ingin konfirmasi pendaftaran. Terima kasih.`;
+
+  function buildWaConfirmUrl(): string {
+    const link = (event.whatsappLink ?? "").trim();
+    const isGroup = /chat\.whatsapp\.com/i.test(link);
+
+    if (link && isGroup) {
+      // Group invite — open as-is (no personal text possible).
+      return link;
+    }
+
+    // Pull digits from a wa.me link / phone in the event field; else use env.
+    let digits = "";
+    const waMatch = /wa\.me\/(\+?\d+)/i.exec(link);
+    if (waMatch) {
+      digits = waMatch[1];
+    } else if (/^\+?\d[\d\s-]+$/.test(link)) {
+      digits = link; // admin typed a bare number
+    } else {
+      digits = process.env.ADMIN_WHATSAPP ?? "6281234567890";
+    }
+    digits = digits.replace(/[^\d]/g, "").replace(/^0/, "62");
+    return `https://wa.me/${digits}?text=${encodeURIComponent(waConfirmMessage)}`;
+  }
+
+  const waConfirmUrl = buildWaConfirmUrl();
 
   // Self check-in: confirmed participants can mark their own attendance only
   // while the admin has opened attendance for the event (like a webinar room
