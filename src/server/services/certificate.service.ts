@@ -6,6 +6,7 @@ import {
   type PDFFont,
   type PDFPage,
 } from "pdf-lib";
+import QRCode from "qrcode";
 import { readUpload } from "@/server/services/upload.service";
 
 /**
@@ -33,12 +34,18 @@ export type CertLayout = {
   numberX: number;
   numberY: number;
   numberSize: number;
+  qrShow: boolean;
+  qrX: number;
+  qrY: number;
+  qrSize: number;
 };
 
 export type CertData = {
   name: string;
   dateText?: string;
   certificateNumber?: string;
+  /** When set, a scannable QR to this URL is placed bottom-right for verification. */
+  verifyUrl?: string;
 };
 
 function hexToRgb(hex: string) {
@@ -142,6 +149,42 @@ export async function generateCertificatePdf(
       layout.numberSize,
       hexToRgb(layout.nameColor),
     );
+  }
+
+  // Verification QR (no caption). Position/size come from the admin layout:
+  // qrX/qrY is the CENTER as fractions of the page; qrSize is the side as a
+  // fraction of the shorter edge. A white backing keeps it scannable.
+  if (layout.qrShow && data.verifyUrl) {
+    const { width, height } = page.getSize();
+    const qrSide = Math.max(48, Math.min(width, height) * layout.qrSize);
+    const pad = qrSide * 0.06;
+
+    // Keep a safe margin from every edge so the QR never touches the border.
+    const edge = Math.min(width, height) * 0.03;
+
+    let x = width * layout.qrX - qrSide / 2;
+    let y = height * (1 - layout.qrY) - qrSide / 2; // invert: fractions top-down
+
+    // Clamp so the QR + its white backing stay fully inside with the margin.
+    x = Math.min(Math.max(x, edge + pad), width - qrSide - edge - pad);
+    y = Math.min(Math.max(y, edge + pad), height - qrSide - edge - pad);
+
+    const pngDataUrl = await QRCode.toDataURL(data.verifyUrl, {
+      margin: 1,
+      width: 512,
+      errorCorrectionLevel: "M",
+    });
+    const qrBytes = Buffer.from(pngDataUrl.split(",")[1], "base64");
+    const qrImg = await doc.embedPng(qrBytes);
+
+    page.drawRectangle({
+      x: x - pad,
+      y: y - pad,
+      width: qrSide + pad * 2,
+      height: qrSide + pad * 2,
+      color: rgb(1, 1, 1),
+    });
+    page.drawImage(qrImg, { x, y, width: qrSide, height: qrSide });
   }
 
   const out = await doc.save();

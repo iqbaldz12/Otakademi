@@ -86,6 +86,10 @@ export default async function EventCertificatePage({
           numberX: event.certNumberX,
           numberY: event.certNumberY,
           numberSize: event.certNumberSize,
+          qrShow: event.certQrShow,
+          qrX: event.certQrX,
+          qrY: event.certQrY,
+          qrSize: event.certQrSize,
         }}
       />
 

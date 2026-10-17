@@ -32,6 +32,10 @@ export function Logo({
       quality={90}
       className="h-full w-auto object-contain"
       sizes={`${width}px`}
+      // Some browser extensions inject attributes (e.g. data-kod-id) onto <img>
+      // before React hydrates, causing a harmless hydration attribute mismatch.
+      // Suppress only this element's warning; real mismatches elsewhere still show.
+      suppressHydrationWarning
     />
   );
 

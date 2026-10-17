@@ -146,6 +146,13 @@ model Event {
   certNumberX    Float   @default(0.5)
   certNumberY    Float   @default(0.9)
   certNumberSize Float   @default(0.02)
+  /// Verification QR placement (fractions of template). Hidden when certQrShow=false.
+  /// qrX/qrY is the QR's CENTER; qrSize is the side as a fraction of the shorter edge.
+  /// Default sits in the bottom-right corner with a small margin from the edges.
+  certQrShow  Boolean @default(true)
+  certQrX     Float   @default(0.9)
+  certQrY     Float   @default(0.86)
+  certQrSize  Float   @default(0.12)
 
   summary     String?
   description String?

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
-import { Sparkline } from "@/components/admin/Sparkline";
+import { TrendChart } from "@/components/admin/TrendChart";
 import { StatCard } from "@/components/admin/StatCard";
 import {
   getEventReport,
@@ -97,8 +97,11 @@ export default async function LaporanPage() {
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div className="card p-5">
           <h2 className="text-h3">Tren Pendaftaran (30 hari)</h2>
-          <div className="mt-4">
-            <Sparkline data={trend} height={80} />
+          <p className="mt-0.5 text-xs text-navy-400">
+            Arahkan/klik titik untuk melihat tanggal &amp; jumlahnya.
+          </p>
+          <div className="mt-6">
+            <TrendChart data={trend} height={150} />
           </div>
         </div>
 

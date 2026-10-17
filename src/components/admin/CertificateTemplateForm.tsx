@@ -22,6 +22,10 @@ export type CertLayoutValues = {
   numberX: number;
   numberY: number;
   numberSize: number;
+  qrShow: boolean;
+  qrX: number;
+  qrY: number;
+  qrSize: number;
 };
 
 /** One overlay line drawn on the live preview, sized relative to template height. */
@@ -81,10 +85,14 @@ export function CertificateTemplateForm({
   // match what the PDF will produce.
   const previewRef = useRef<HTMLDivElement | null>(null);
   const [boxH, setBoxH] = useState(400);
+  const [boxW, setBoxW] = useState(560);
   useEffect(() => {
     if (!previewRef.current) return;
     const el = previewRef.current;
-    const update = () => setBoxH(el.clientHeight || 400);
+    const update = () => {
+      setBoxH(el.clientHeight || 400);
+      setBoxW(el.clientWidth || 560);
+    };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
@@ -106,6 +114,11 @@ export function CertificateTemplateForm({
   const [numberX, setNumberX] = useState(initial.numberX);
   const [numberY, setNumberY] = useState(initial.numberY);
   const [numberSize, setNumberSize] = useState(initial.numberSize);
+
+  const [qrShow, setQrShow] = useState(initial.qrShow);
+  const [qrX, setQrX] = useState(initial.qrX);
+  const [qrY, setQrY] = useState(initial.qrY);
+  const [qrSize, setQrSize] = useState(initial.qrSize);
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -239,13 +252,35 @@ export function CertificateTemplateForm({
             )}
             {numberShow && (
               <PreviewLabel
-                text="No. OTK/CERT/2026/XXXX"
+                text="No. OTK/XXXX-XXXX/CERTF/2026"
                 x={numberX}
                 y={numberY}
                 size={numberSize}
                 color={nameColor}
                 boxH={boxH}
               />
+            )}
+            {qrShow && (
+              <span
+                className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 bg-white p-0.5 shadow-sm"
+                style={{
+                  left: `${qrX * 100}%`,
+                  top: `${qrY * 100}%`,
+                  width: `${qrSize * Math.min(boxW, boxH)}px`,
+                  height: `${qrSize * Math.min(boxW, boxH)}px`,
+                }}
+                aria-label="Pratinjau posisi QR"
+              >
+                {/* Simple QR-ish placeholder so admin sees the spot & size. */}
+                <span className="grid h-full w-full grid-cols-4 grid-rows-4 gap-px">
+                  {Array.from({ length: 16 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={(i * 7 + 3) % 3 === 0 ? "bg-navy-900" : "bg-transparent"}
+                    />
+                  ))}
+                </span>
+              </span>
             )}
           </div>
         </div>
@@ -376,6 +411,37 @@ export function CertificateTemplateForm({
             <input type="hidden" name="certNumberX" value={numberX} />
             <input type="hidden" name="certNumberY" value={numberY} />
             <input type="hidden" name="certNumberSize" value={numberSize} />
+          </>
+        )}
+      </fieldset>
+
+      {/* QR placement */}
+      <fieldset className="rounded-xl border border-navy-100 p-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="certQrShow"
+            checked={qrShow}
+            onChange={(e) => setQrShow(e.target.checked)}
+            className="size-4 accent-gold-500"
+          />
+          <span className="text-sm font-bold text-navy-700">QR Verifikasi</span>
+        </label>
+        <p className="mb-3 ml-6 text-xs text-navy-500">
+          QR yang bisa dipindai untuk membuktikan keaslian sertifikat. Atur posisi
+          dan ukurannya agar pas (tanpa tulisan, hanya QR).
+        </p>
+        {qrShow ? (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <NumField name="certQrX" label="Posisi Horizontal (X)" hint="0 kiri – 1 kanan (pusat QR)" value={qrX} onChange={setQrX} />
+            <NumField name="certQrY" label="Posisi Vertikal (Y)" hint="0 atas – 1 bawah (pusat QR)" value={qrY} onChange={setQrY} />
+            <NumField name="certQrSize" label="Ukuran QR" hint="Fraksi sisi terpendek, mis. 0.14" value={qrSize} onChange={setQrSize} step="0.005" min="0.05" max="0.4" />
+          </div>
+        ) : (
+          <>
+            <input type="hidden" name="certQrX" value={qrX} />
+            <input type="hidden" name="certQrY" value={qrY} />
+            <input type="hidden" name="certQrSize" value={qrSize} />
           </>
         )}
       </fieldset>

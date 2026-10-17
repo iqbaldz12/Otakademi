@@ -66,6 +66,10 @@ export async function saveCertificateTemplateAction(
       certNumberX: clamp01(num(form, "certNumberX", 0.5)),
       certNumberY: clamp01(num(form, "certNumberY", 0.9)),
       certNumberSize: clamp01(num(form, "certNumberSize", 0.02)),
+      certQrShow: form.get("certQrShow") === "on" || form.get("certQrShow") === "true",
+      certQrX: clamp01(num(form, "certQrX", 0.9)),
+      certQrY: clamp01(num(form, "certQrY", 0.86)),
+      certQrSize: clamp01(num(form, "certQrSize", 0.12)),
     },
   });
 

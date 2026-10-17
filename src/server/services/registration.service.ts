@@ -1,6 +1,12 @@
 import { db } from "@/server/db";
 import { registrationCode, ticketToken } from "@/lib/ids";
-import { applyPromo } from "@/lib/domain";
+import {
+  applyPromo,
+  REGISTRATION_STATUS_META,
+  PAYMENT_STATUS_META,
+  type RegistrationStatusName,
+  type PaymentStatusName,
+} from "@/lib/domain";
 import { SEAT_HOLDING_STATUS } from "@/server/services/event.service";
 import { findUsablePromo } from "@/server/services/promo.service";
 import { queueNotification, sendTicketEmail } from "@/server/services/notification.service";
@@ -518,28 +524,57 @@ export function toCsv(rows: RegistrationRow[]): string {
     return `"${String(v).replace(/"/g, '""')}"`;
   };
 
+  // Human-readable Jakarta date/time for spreadsheets (not raw ISO/UTC).
+  const fmtDate = (d: Date) =>
+    new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }).format(d);
+  const fmtDateTime = (d: Date) =>
+    new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }).format(d) + " WIB";
+
+  // Keep phone as text so Excel doesn't drop the leading 0 or use sci-notation.
+  const asText = (s: string) => (s ? `="${s.replace(/"/g, '""')}"` : "");
+
+  const statusLabel = (s: string) =>
+    REGISTRATION_STATUS_META[s as RegistrationStatusName]?.label ?? s;
+  const payLabel = (s: string | undefined) =>
+    s ? (PAYMENT_STATUS_META[s as PaymentStatusName]?.label ?? s) : "-";
+
+  // Use ; separator — Excel in id/eu locales splits on ; by default, so columns
+  // line up without a manual "Text to Columns" step. Every field is quoted, so
+  // a ; inside a value never breaks the layout.
+  const SEP = ";";
+
   const lines = rows.map((r) =>
     [
-      r.code,
-      r.participant.name,
-      r.participant.email,
-      r.participant.phone,
-      r.participant.institution ?? "",
-      r.participant.city ?? "",
-      r.event.title,
-      r.event.startAt.toISOString(),
-      r.status,
-      r.payment?.status ?? "-",
-      r.payment?.amount ?? 0,
-      r.promoCode ?? "",
-      r.source ?? "",
-      r.ticket?.checkInAt ? r.ticket.checkInAt.toISOString() : "",
-      r.createdAt.toISOString(),
-    ]
-      .map(escape)
-      .join(","),
+      escape(r.code),
+      escape(r.participant.name),
+      escape(r.participant.email),
+      asText(r.participant.phone),
+      escape(r.participant.institution ?? ""),
+      escape(r.participant.city ?? ""),
+      escape(r.event.title),
+      escape(fmtDate(r.event.startAt)),
+      escape(statusLabel(r.status)),
+      escape(payLabel(r.payment?.status)),
+      escape(r.payment?.amount ?? 0),
+      escape(r.promoCode ?? ""),
+      escape(r.source ?? ""),
+      escape(r.ticket?.checkInAt ? fmtDateTime(r.ticket.checkInAt) : ""),
+      escape(fmtDateTime(r.createdAt)),
+    ].join(SEP),
   );
 
-  // BOM so Excel opens UTF-8 names correctly.
-  return "\uFEFF" + [header.map(escape).join(","), ...lines].join("\r\n");
+  // BOM keeps UTF-8 names correct in Excel.
+  return "\uFEFF" + [header.map(escape).join(SEP), ...lines].join("\r\n");
 }

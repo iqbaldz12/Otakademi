@@ -37,6 +37,10 @@ function layoutFromEvent(e: {
   certNumberX: number;
   certNumberY: number;
   certNumberSize: number;
+  certQrShow: boolean;
+  certQrX: number;
+  certQrY: number;
+  certQrSize: number;
 }): CertLayout {
   return {
     nameX: e.certNameX,
@@ -51,13 +55,23 @@ function layoutFromEvent(e: {
     numberX: e.certNumberX,
     numberY: e.certNumberY,
     numberSize: e.certNumberSize,
+    qrShow: e.certQrShow,
+    qrX: e.certQrX,
+    qrY: e.certQrY,
+    qrSize: e.certQrSize,
   };
 }
 
-/** Stable per-registration certificate number, e.g. OTK/CERT/2026/AB12-CD34. */
+/**
+ * Stable per-registration certificate number.
+ *
+ * Format: OTK/<registration-tail>/CERTF/<year>, e.g. OTK/PNC4-K6C2/CERTF/2026.
+ * The tail is the registration code without its leading "OTK-" prefix (dashes
+ * inside the tail are kept), giving a tidy, traceable number.
+ */
 function makeCertNumber(code: string, year: number): string {
-  const tail = code.replace(/^OTK-/, "").replace(/-/g, "");
-  return `OTK/CERT/${year}/${tail}`;
+  const tail = code.toUpperCase().replace(/^OTK-/, "");
+  return `OTK/${tail}/CERTF/${year}`;
 }
 
 /**
@@ -91,11 +105,12 @@ export async function buildCertificate(
     return { ok: false, reason: "Template sertifikat belum di-upload untuk event ini." };
   }
 
-  // Assign a certificate number once, then reuse it.
-  const number =
-    reg.certificateNumber ??
-    makeCertNumber(reg.code, reg.event.startAt.getFullYear());
-  if (!reg.certificateNumber) {
+  // Assign/normalise the certificate number. Regenerate it when missing or when
+  // it doesn't match the current format (e.g. older "OTK/CERT/..." numbers), so
+  // changing the format applies to everyone.
+  const expected = makeCertNumber(reg.code, reg.event.startAt.getFullYear());
+  const number = reg.certificateNumber === expected ? reg.certificateNumber : expected;
+  if (reg.certificateNumber !== number) {
     await db.registration.update({
       where: { id: reg.id },
       data: { certificateNumber: number },
@@ -109,6 +124,7 @@ export async function buildCertificate(
       name: reg.participant.name,
       dateText: fmtDateLong(reg.event.startAt),
       certificateNumber: number,
+      verifyUrl: `${SITE_URL}/verifikasi/${reg.code}`,
     },
   );
 
@@ -255,6 +271,49 @@ export async function listCertificateRoster(
     certificateNumber: r.certificateNumber,
     sentAt: r.certificateSentAt,
   }));
+}
+
+export type CertVerification =
+  | {
+      valid: true;
+      name: string;
+      eventTitle: string;
+      eventDate: Date;
+      number: string;
+      issuedAt: Date | null;
+    }
+  | { valid: false };
+
+/**
+ * Public certificate verification by registration code.
+ *
+ * A certificate is considered authentic when the participant attended and a
+ * certificate number has been assigned (i.e. it was generated/issued). Does not
+ * expose any sensitive data beyond name + event + number.
+ */
+export async function verifyCertificate(code: string): Promise<CertVerification> {
+  const reg = await db.registration.findUnique({
+    where: { code: code.trim().toUpperCase() },
+    include: {
+      participant: { select: { name: true } },
+      event: { select: { title: true, startAt: true } },
+      attendance: { select: { id: true } },
+    },
+  });
+
+  if (!reg) return { valid: false };
+
+  const attended = reg.status === "ATTENDED" || Boolean(reg.attendance);
+  if (!attended || !reg.certificateNumber) return { valid: false };
+
+  return {
+    valid: true,
+    name: reg.participant.name,
+    eventTitle: reg.event.title,
+    eventDate: reg.event.startAt,
+    number: reg.certificateNumber,
+    issuedAt: reg.certificateSentAt,
+  };
 }
 
 export type CertSummary = { attended: number; sent: number };
