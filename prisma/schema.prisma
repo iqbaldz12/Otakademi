@@ -90,6 +90,8 @@ model Event {
   id          String      @id @default(cuid())
   title       String
   slug        String      @unique
+  /// Short unique event code (e.g. EVT-7QF2) used in certificate numbers.
+  eventCode   String?     @unique
   category    String
   format      EventFormat @default(ONLINE)
   venue       String?
@@ -154,6 +156,36 @@ model Event {
   certQrY     Float   @default(0.86)
   certQrSize  Float   @default(0.12)
 
+  // ---- Moderator certificate (separate template + layout) ----
+  modTemplate     String?
+  modNameX        Float   @default(0.5)
+  modNameY        Float   @default(0.5)
+  modNameSize     Float   @default(0.06)
+  modNameColor    String  @default("#1A2C4E")
+  modNumberShow   Boolean @default(false)
+  modNumberX      Float   @default(0.5)
+  modNumberY      Float   @default(0.9)
+  modNumberSize   Float   @default(0.02)
+  modQrShow       Boolean @default(true)
+  modQrX          Float   @default(0.9)
+  modQrY          Float   @default(0.86)
+  modQrSize       Float   @default(0.12)
+
+  // ---- Speaker (pemateri) certificate (separate template + layout) ----
+  spkTemplate     String?
+  spkNameX        Float   @default(0.5)
+  spkNameY        Float   @default(0.5)
+  spkNameSize     Float   @default(0.06)
+  spkNameColor    String  @default("#1A2C4E")
+  spkNumberShow   Boolean @default(false)
+  spkNumberX      Float   @default(0.5)
+  spkNumberY      Float   @default(0.9)
+  spkNumberSize   Float   @default(0.02)
+  spkQrShow       Boolean @default(true)
+  spkQrX          Float   @default(0.9)
+  spkQrY          Float   @default(0.86)
+  spkQrSize       Float   @default(0.12)
+
   summary     String?
   description String?
   outcomes    String[]    @default([]) // "what you get" bullets
@@ -162,9 +194,62 @@ model Event {
 
   registrations Registration[]
   attendances   Attendance[]
+  staff         EventStaff[]
+  // testimonials  EventTestimonial[] // (fitur testimoni ditunda)
 
   @@index([status])
   @@index([startAt])
+}
+
+// Fitur testimoni ditunda — aktifkan lagi nanti (model + enum + relasi).
+// enum TestimonialStatus {
+//   PENDING
+//   APPROVED
+//   HIDDEN
+// }
+//
+// model EventTestimonial {
+//   id             String            @id @default(cuid())
+//   eventId        String
+//   registrationId String            @unique
+//   name           String
+//   rating         Int               @default(5)
+//   message        String
+//   status         TestimonialStatus @default(PENDING)
+//   featured       Boolean           @default(false)
+//   createdAt      DateTime          @default(now())
+//   updatedAt      DateTime          @updatedAt
+//   event        Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+//   registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+//   @@index([eventId, status])
+//   @@index([featured, status])
+// }
+
+enum EventStaffRole {
+  MODERATOR
+  SPEAKER
+}
+
+/// Moderator / pemateri of an event (they don't register), used to issue their
+/// certificates. Nama diketik admin; certificate number is derived from the
+/// event + role + order, and a verification QR is embedded like participants.
+model EventStaff {
+  id                String         @id @default(cuid())
+  eventId           String
+  role              EventStaffRole
+  name              String
+  /// Optional email; when set, the certificate can be emailed too.
+  email             String?
+  /// Assigned on first generate, e.g. OTK/<EVENTCODE>/SPK-01/2026.
+  certificateNumber String?
+  certificateSentAt DateTime?
+  sortOrder         Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, role, sortOrder])
 }
 
 model Participant {
@@ -205,6 +290,7 @@ model Registration {
   payment     Payment?
   ticket      Ticket?
   attendance  Attendance?
+  // testimonial EventTestimonial? // (fitur testimoni ditunda)
 
   @@index([eventId])
   @@index([status])

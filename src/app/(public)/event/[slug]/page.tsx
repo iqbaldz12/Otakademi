@@ -5,6 +5,11 @@ import { notFound } from "next/navigation";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { getEventBySlug } from "@/server/services/event.service";
+// Fitur testimoni ditunda — aktifkan lagi nanti.
+// import {
+//   listApprovedTestimonials,
+//   testimonialSummary,
+// } from "@/server/services/testimonial.service";
 import { db } from "@/server/db";
 import { EVENT_FORMAT_META, type EventFormatName } from "@/lib/domain";
 import {
@@ -78,6 +83,12 @@ export default async function EventDetailPage({
   const event = await getEventBySlug(slug);
 
   if (!event) notFound();
+
+  // Fitur testimoni ditunda — aktifkan lagi nanti.
+  // const [testimonials, tSummary] = await Promise.all([
+  //   listApprovedTestimonials(event.id).catch(() => []),
+  //   testimonialSummary(event.id).catch(() => ({ count: 0, average: 0 })),
+  // ]);
 
   const { seats } = event;
   const format = EVENT_FORMAT_META[event.format as EventFormatName];
@@ -350,6 +361,8 @@ export default async function EventDetailPage({
                   </div>
                 </div>
               )}
+
+              {/* Testimoni peserta ditunda — aktifkan lagi nanti (lihat testimonial.service). */}
 
               {/* Practical info */}
               <div className="mt-8">

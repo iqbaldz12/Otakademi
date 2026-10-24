@@ -10,6 +10,8 @@ import {
   certificateSummary,
 } from "@/server/services/certificate-send.service";
 import { getJob } from "@/server/services/certificate-queue.service";
+import { StaffCertificateSection } from "@/components/admin/StaffCertificateSection";
+import { listEventStaff } from "@/server/services/staff-certificate.service";
 import { fmtDateLong } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Sertifikat Event" };
@@ -25,11 +27,19 @@ export default async function EventCertificatePage({
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const [roster, summary] = await Promise.all([
+  const [roster, summary, staff] = await Promise.all([
     listCertificateRoster(id),
     certificateSummary(id),
+    listEventStaff(id),
   ]);
   const job = getJob(id);
+
+  const moderators = staff
+    .filter((s) => s.role === "MODERATOR")
+    .map((s) => ({ id: s.id, name: s.name, email: s.email, certificateNumber: s.certificateNumber, sentAt: s.sentAt ? s.sentAt.toISOString() : null }));
+  const speakers = staff
+    .filter((s) => s.role === "SPEAKER")
+    .map((s) => ({ id: s.id, name: s.name, email: s.email, certificateNumber: s.certificateNumber, sentAt: s.sentAt ? s.sentAt.toISOString() : null }));
 
   return (
     <div className="space-y-6">
@@ -98,6 +108,52 @@ export default async function EventCertificatePage({
         rows={roster}
         hasTemplate={Boolean(event.certificateTemplate)}
         initialJob={job}
+      />
+
+      <StaffCertificateSection
+        eventId={event.id}
+        role="MODERATOR"
+        roleLabel="Moderator"
+        prefix="mod"
+        initialTemplate={{
+          template: event.modTemplate,
+          nameX: event.modNameX,
+          nameY: event.modNameY,
+          nameSize: event.modNameSize,
+          nameColor: event.modNameColor,
+          numberShow: event.modNumberShow,
+          numberX: event.modNumberX,
+          numberY: event.modNumberY,
+          numberSize: event.modNumberSize,
+          qrShow: event.modQrShow,
+          qrX: event.modQrX,
+          qrY: event.modQrY,
+          qrSize: event.modQrSize,
+        }}
+        staff={moderators}
+      />
+
+      <StaffCertificateSection
+        eventId={event.id}
+        role="SPEAKER"
+        roleLabel="Narasumber"
+        prefix="spk"
+        initialTemplate={{
+          template: event.spkTemplate,
+          nameX: event.spkNameX,
+          nameY: event.spkNameY,
+          nameSize: event.spkNameSize,
+          nameColor: event.spkNameColor,
+          numberShow: event.spkNumberShow,
+          numberX: event.spkNumberX,
+          numberY: event.spkNumberY,
+          numberSize: event.spkNumberSize,
+          qrShow: event.spkQrShow,
+          qrX: event.spkQrX,
+          qrY: event.spkQrY,
+          qrSize: event.spkQrSize,
+        }}
+        staff={speakers}
       />
     </div>
   );

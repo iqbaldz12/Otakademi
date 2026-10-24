@@ -249,6 +249,7 @@ export async function getRegistrationByCode(code: string) {
       payment: true,
       ticket: true,
       attendance: true,
+      // testimonial: true, // (fitur testimoni ditunda — aktifkan lagi nanti)
     },
   });
 }

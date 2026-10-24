@@ -32,6 +32,15 @@ export function registrationCode(): string {
 }
 
 /**
+ * Short unique event code, e.g. `EVT-7QF2`. Used in certificate numbers so the
+ * number stays compact and doesn't leak the event's full name. DB enforces
+ * uniqueness; callers retry on the rare collision.
+ */
+export function eventCode(): string {
+  return `EVT-${randomFrom(HUMAN_ALPHABET, 4)}`;
+}
+
+/**
  * Ticket token used inside the QR payload. This one is a real secret: knowing
  * it lets someone check in. 32 hex chars = 128 bits of entropy, generated
  * without modulo bias.

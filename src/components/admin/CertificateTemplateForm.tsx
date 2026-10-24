@@ -398,7 +398,7 @@ export function CertificateTemplateForm({
           <span className="text-sm font-bold text-navy-700">Cetak Nomor Sertifikat</span>
         </label>
         <p className="mb-3 ml-6 text-xs text-navy-500">
-          Opsional. Nomor unik otomatis (mis. &quot;No. OTK/CERT/2026/XXXX&quot;).
+          Opsional. Nomor unik otomatis (mis. &quot;No. OTK/PNC4-K6C2/CERTF/2026&quot;).
         </p>
         {numberShow ? (
           <div className="grid gap-4 sm:grid-cols-3">

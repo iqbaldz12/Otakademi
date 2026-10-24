@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Logo } from "@/components/site/Logo";
 import { SelfCheckIn } from "@/components/site/SelfCheckIn";
+// import { TestimonialForm } from "@/components/site/TestimonialForm"; // (testimoni ditunda)
 import { getRegistrationByCode } from "@/server/services/registration.service";
 import { listActivePaymentMethods } from "@/server/services/payment-method.service";
 import { renderQrSvg, ticketPayload } from "@/server/services/ticket.service";
@@ -408,6 +409,14 @@ export default async function TicketPage({
             )}
           </div>
         )}
+
+        {/* ---------- Testimoni (ditunda — aktifkan lagi nanti) ----------
+        {isConfirmed && event.endAt < new Date() ? (
+          <div className="card mt-6 p-5 sm:p-6">
+            <h2 className="text-h3">Beri Testimoni</h2>
+          </div>
+        ) : null}
+        ---------------------------------------------------------------- */}
 
         {/* ---------- Payment panel ---------- */}
         {payment && payment.status !== "PAID" && (

@@ -85,6 +85,17 @@ export function EventRowActions({
         Sertifikat
       </Link>
 
+      {/* Fitur testimoni ditunda — aktifkan lagi nanti.
+      <Link
+        href={`/admin/event/${eventId}/testimoni`}
+        className="btn btn-ghost btn-sm"
+        title={`Testimoni ${title}`}
+      >
+        <Icon name="star" size={15} />
+        Testimoni
+      </Link>
+      */}
+
       {/* Arsip video: terbitkan/sembunyikan rekaman untuk peserta yang sudah bayar */}
       {hasRecording ? (
         <span className="flex items-center gap-1.5" title="Arsip video rekaman">
